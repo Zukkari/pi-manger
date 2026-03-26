@@ -66,3 +66,36 @@ func (s *Store) DeleteMissing(ctx context.Context, paths []string) error {
 	_, err := s.db.ExecContext(ctx, query, args...)
 	return err
 }
+
+// ListChildren returns direct children of the given parent.
+// Pass a zero sql.NullInt64 (Valid=false) to get root-level entries.
+func (s *Store) ListChildren(ctx context.Context, parentID sql.NullInt64) ([]File, error) {
+	const rootQ = `SELECT id, parent_id, path, name, size, is_dir, modified_at, synced_at
+FROM files WHERE parent_id IS NULL ORDER BY is_dir DESC, name ASC`
+	const childQ = `SELECT id, parent_id, path, name, size, is_dir, modified_at, synced_at
+FROM files WHERE parent_id = ? ORDER BY is_dir DESC, name ASC`
+
+	var (
+		rows *sql.Rows
+		err  error
+	)
+	if !parentID.Valid {
+		rows, err = s.db.QueryContext(ctx, rootQ)
+	} else {
+		rows, err = s.db.QueryContext(ctx, childQ, parentID.Int64)
+	}
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var files []File
+	for rows.Next() {
+		var f File
+		if err := rows.Scan(&f.ID, &f.ParentID, &f.Path, &f.Name, &f.Size, &f.IsDir, &f.ModifiedAt, &f.SyncedAt); err != nil {
+			return nil, err
+		}
+		files = append(files, f)
+	}
+	return files, rows.Err()
+}

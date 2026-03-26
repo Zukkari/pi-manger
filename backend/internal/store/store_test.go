@@ -117,3 +117,99 @@ func TestDeleteMissing_EmptySliceDeletesAll(t *testing.T) {
 		t.Errorf("expected all rows deleted, got %d", count)
 	}
 }
+
+func TestListChildren_ReturnsRootEntries(t *testing.T) {
+	s := openTestStore(t)
+	ctx := context.Background()
+	now := time.Now().Unix()
+
+	// Insert a root-level dir and a root-level file.
+	dirID, err := s.UpsertFile(ctx, UpsertFileParams{
+		Path: "/data/docs", Name: "docs", IsDir: 1, ModifiedAt: now, SyncedAt: now,
+	})
+	if err != nil {
+		t.Fatalf("upsert dir: %v", err)
+	}
+	_, err = s.UpsertFile(ctx, UpsertFileParams{
+		Path: "/data/readme.txt", Name: "readme.txt", Size: 512, ModifiedAt: now, SyncedAt: now,
+	})
+	if err != nil {
+		t.Fatalf("upsert file: %v", err)
+	}
+	// Insert a child that must NOT appear in root results.
+	_, err = s.UpsertFile(ctx, UpsertFileParams{
+		ParentID: sql.NullInt64{Int64: dirID, Valid: true},
+		Path:     "/data/docs/note.txt", Name: "note.txt", ModifiedAt: now, SyncedAt: now,
+	})
+	if err != nil {
+		t.Fatalf("upsert child: %v", err)
+	}
+
+	files, err := s.ListChildren(ctx, sql.NullInt64{})
+	if err != nil {
+		t.Fatalf("ListChildren: %v", err)
+	}
+	if len(files) != 2 {
+		t.Fatalf("expected 2 root entries, got %d", len(files))
+	}
+	if files[0].Name != "docs" {
+		t.Errorf("expected files[0].Name == \"docs\" (dirs sort first), got %q", files[0].Name)
+	}
+	if files[1].Name != "readme.txt" {
+		t.Errorf("expected files[1].Name == \"readme.txt\" (file comes second), got %q", files[1].Name)
+	}
+}
+
+func TestListChildren_ReturnsChildrenOfParent(t *testing.T) {
+	s := openTestStore(t)
+	ctx := context.Background()
+	now := time.Now().Unix()
+
+	dirID, err := s.UpsertFile(ctx, UpsertFileParams{
+		Path: "/data/docs", Name: "docs", IsDir: 1, ModifiedAt: now, SyncedAt: now,
+	})
+	if err != nil {
+		t.Fatalf("upsert dir: %v", err)
+	}
+	_, err = s.UpsertFile(ctx, UpsertFileParams{
+		ParentID: sql.NullInt64{Int64: dirID, Valid: true},
+		Path:     "/data/docs/a.txt", Name: "a.txt", ModifiedAt: now, SyncedAt: now,
+	})
+	if err != nil {
+		t.Fatalf("upsert child a: %v", err)
+	}
+	_, err = s.UpsertFile(ctx, UpsertFileParams{
+		ParentID: sql.NullInt64{Int64: dirID, Valid: true},
+		Path:     "/data/docs/b.txt", Name: "b.txt", ModifiedAt: now, SyncedAt: now,
+	})
+	if err != nil {
+		t.Fatalf("upsert child b: %v", err)
+	}
+
+	files, err := s.ListChildren(ctx, sql.NullInt64{Int64: dirID, Valid: true})
+	if err != nil {
+		t.Fatalf("ListChildren: %v", err)
+	}
+	if len(files) != 2 {
+		t.Fatalf("expected 2 children, got %d", len(files))
+	}
+	if files[0].Name != "a.txt" {
+		t.Errorf("expected files[0].Name == \"a.txt\" (alphabetical), got %q", files[0].Name)
+	}
+	if files[1].Name != "b.txt" {
+		t.Errorf("expected files[1].Name == \"b.txt\", got %q", files[1].Name)
+	}
+}
+
+func TestListChildren_NonExistentParentReturnsEmpty(t *testing.T) {
+	s := openTestStore(t)
+	ctx := context.Background()
+
+	files, err := s.ListChildren(ctx, sql.NullInt64{Int64: 9999, Valid: true})
+	if err != nil {
+		t.Fatalf("ListChildren: %v", err)
+	}
+	if len(files) != 0 {
+		t.Fatalf("expected 0 results for non-existent parent, got %d", len(files))
+	}
+}
