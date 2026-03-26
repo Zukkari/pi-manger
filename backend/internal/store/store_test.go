@@ -103,7 +103,9 @@ func TestDeleteMissing_EmptySliceDeletesAll(t *testing.T) {
 	s := openTestStore(t)
 	ctx := context.Background()
 
-	s.UpsertFile(ctx, UpsertFileParams{Path: "/data/a.txt", Name: "a.txt", ModifiedAt: time.Now().Unix(), SyncedAt: time.Now().Unix()})
+	if _, err := s.UpsertFile(ctx, UpsertFileParams{Path: "/data/a.txt", Name: "a.txt", ModifiedAt: time.Now().Unix(), SyncedAt: time.Now().Unix()}); err != nil {
+		t.Fatalf("upsert setup: %v", err)
+	}
 
 	if err := s.DeleteMissing(ctx, []string{}); err != nil {
 		t.Fatalf("DeleteMissing with empty slice: %v", err)
