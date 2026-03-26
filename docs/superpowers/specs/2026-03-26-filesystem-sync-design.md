@@ -66,15 +66,15 @@ CREATE TABLE IF NOT EXISTS files (
     name        TEXT NOT NULL,
     size        INTEGER NOT NULL DEFAULT 0,
     is_dir      INTEGER NOT NULL DEFAULT 0,
-    modified_at DATETIME NOT NULL,
-    synced_at   DATETIME NOT NULL
+    modified_at INTEGER NOT NULL,
+    synced_at   INTEGER NOT NULL
 );
 ```
 
 - `path` is the upsert key — the same path always maps to the same `id`.
 - `parent_id` is `NULL` for the root. `ON DELETE CASCADE` removes children when a directory row is deleted.
-- `modified_at` stores the file's `mtime` from disk (Linux has no reliable birth time).
-- `synced_at` records when the row was last written — useful for debugging.
+- `modified_at` stores the file's `mtime` as a Unix timestamp (int64 seconds). Linux has no reliable birth time; INTEGER avoids SQLite driver timezone/parsing complexity.
+- `synced_at` records when the row was last written as a Unix timestamp — useful for debugging.
 
 ---
 

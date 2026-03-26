@@ -151,5 +151,17 @@ func TestSync_SkipsUnreadableEntry(t *testing.T) {
 	}
 }
 
+func TestSync_ReturnsErrorOnCancelledContext(t *testing.T) {
+	root := t.TempDir()
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // cancel immediately
+
+	ms := &mockStore{}
+	err := scanner.Sync(ctx, root, ms)
+	if err == nil {
+		t.Fatal("expected error for cancelled context, got nil")
+	}
+}
+
 // Verify *store.Store satisfies scanner.Store at compile time.
 var _ scanner.Store = (*store.Store)(nil)
