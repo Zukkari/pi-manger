@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 
 	"pi-manager/internal/handler"
@@ -92,9 +91,18 @@ func TestDiskHandler_IgnoresNonGETMethods(t *testing.T) {
 
 // Verify MANAGED_DIR env var wiring helper used in main — test the constructor
 func TestNewDiskHandler_StoresPath(t *testing.T) {
-	expected := os.TempDir()
-	h := handler.NewDiskHandler(expected)
-	if h == nil {
-		t.Fatal("NewDiskHandler returned nil")
+	dir := t.TempDir()
+	h := handler.NewDiskHandler(dir)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/disk", nil)
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+
+	var body map[string]interface{}
+	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
+		t.Fatalf("response is not valid JSON: %v", err)
+	}
+	if body["path"] != dir {
+		t.Errorf("handler stored wrong path: got %q, want %q", body["path"], dir)
 	}
 }

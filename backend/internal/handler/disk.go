@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"pi-manager/internal/disk"
@@ -33,8 +34,11 @@ type errorResponse struct {
 func (h *DiskHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Allow", http.MethodGet)
 		w.WriteHeader(http.StatusMethodNotAllowed)
-		json.NewEncoder(w).Encode(errorResponse{Error: "method not allowed"})
+		if err := json.NewEncoder(w).Encode(errorResponse{Error: "method not allowed"}); err != nil {
+			log.Printf("failed to encode response: %v", err)
+		}
 		return
 	}
 
@@ -42,16 +46,20 @@ func (h *DiskHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(errorResponse{Error: err.Error()})
+		if err := json.NewEncoder(w).Encode(errorResponse{Error: err.Error()}); err != nil {
+			log.Printf("failed to encode response: %v", err)
+		}
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(diskResponse{
+	if err := json.NewEncoder(w).Encode(diskResponse{
 		Path:        stats.Path,
 		TotalBytes:  stats.TotalBytes,
 		UsedBytes:   stats.UsedBytes,
 		FreeBytes:   stats.FreeBytes,
 		UsedPercent: stats.UsedPercent,
-	})
+	}); err != nil {
+		log.Printf("failed to encode response: %v", err)
+	}
 }
