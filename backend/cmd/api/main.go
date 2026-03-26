@@ -16,12 +16,18 @@ func main() {
 		os.Exit(1)
 	}
 
+	if _, err := os.Stat(managedDir); err != nil {
+		fmt.Fprintf(os.Stderr, "error: MANAGED_DIR %q is not accessible: %v\n", managedDir, err)
+		os.Exit(1)
+	}
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
 
 	mux := http.NewServeMux()
+	// /api/disk is registered as an exact match; requests to /api/disk/ will 404.
 	mux.Handle("/api/disk", handler.NewDiskHandler(managedDir))
 
 	addr := ":" + port
