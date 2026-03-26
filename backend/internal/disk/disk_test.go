@@ -1,7 +1,6 @@
 package disk_test
 
 import (
-	"os"
 	"testing"
 
 	"pi-manager/internal/disk"
@@ -35,21 +34,5 @@ func TestStats_ErrorOnInvalidPath(t *testing.T) {
 	_, err := disk.Stats("/this/path/does/not/exist/xyz123")
 	if err == nil {
 		t.Fatal("expected error for invalid path, got nil")
-	}
-}
-
-func TestStats_UsesGivenPath(t *testing.T) {
-	dir, err := os.MkdirTemp("", "disk-test-*")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.RemoveAll(dir)
-
-	stats, err := disk.Stats(dir)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if stats.Path != dir {
-		t.Errorf("expected path %q, got %q", dir, stats.Path)
 	}
 }

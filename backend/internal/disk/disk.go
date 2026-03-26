@@ -21,6 +21,9 @@ func Stats(path string) (DiskStats, error) {
 		return DiskStats{}, fmt.Errorf("statfs %q: %w", path, err)
 	}
 
+	if stat.Bsize <= 0 {
+		return DiskStats{}, fmt.Errorf("statfs %q: invalid block size %d", path, stat.Bsize)
+	}
 	blockSize := uint64(stat.Bsize)
 	total := stat.Blocks * blockSize
 	free := stat.Bfree * blockSize
