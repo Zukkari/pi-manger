@@ -52,7 +52,7 @@ backend/
 | `PORT`        | No       | `8080`             | HTTP server port (unchanged)             |
 | `DB_PATH`     | No       | `./pi-manager.db`  | Path to the SQLite database file         |
 
-In Docker Compose, `DB_PATH` should point to a named volume so the database persists across container restarts.
+In Docker Compose, `DB_PATH` points to a named volume so the database persists across container restarts (see docker-compose changes below).
 
 ---
 
@@ -190,6 +190,45 @@ go func() {
 | Ticker sync fails | Logged; next tick retries |
 | Single file unreadable during walk | Logged and skipped; walk continues |
 | `MANAGED_DIR` disappears between syncs | Walk error logged; DB retains last known state |
+
+---
+
+## Docker Compose Changes
+
+`docker-compose.yml` gains a `DB_PATH` env var and a named volume for the SQLite file:
+
+```yaml
+services:
+  backend:
+    build:
+      context: ./backend
+    platform: linux/arm64
+    expose:
+      - "8080"
+    environment:
+      - MANAGED_DIR=/data
+      - PORT=8080
+      - DB_PATH=/db/pi-manager.db   # new
+    volumes:
+      - ${PI_MANAGED_DIR:-/tmp}:/data
+      - db-data:/db                  # new
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+    platform: linux/arm64
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:             # new
+  db-data:
+```
+
+The `db-data` named volume is managed by Docker and persists across `docker compose down` / `up` cycles. The SQLite file lives at `/db/pi-manager.db` inside the container.
 
 ---
 
