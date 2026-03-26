@@ -1,5 +1,5 @@
 # Build stage runs on native host and cross-compiles for arm64
-FROM golang:1.22-alpine AS builder
+FROM golang:1.25-alpine AS builder
 WORKDIR /app
 COPY . .
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o api ./cmd/api
