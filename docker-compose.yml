@@ -1,0 +1,12 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - "8080:8080"
+    environment:
+      - MANAGED_DIR=/data
+      - PORT=8080
+    volumes:
+      - ${PI_MANAGED_DIR:-/tmp}:/data
+    restart: unless-stopped
