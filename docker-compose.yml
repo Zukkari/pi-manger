@@ -8,8 +8,10 @@ services:
     environment:
       - MANAGED_DIR=/data
       - PORT=8080
+      - DB_PATH=/db/pi-manager.db
     volumes:
       - ${PI_MANAGED_DIR:-/tmp}:/data
+      - db-data:/db
     restart: unless-stopped
 
   frontend:
@@ -21,3 +23,6 @@ services:
     depends_on:
       - backend
     restart: unless-stopped
+
+volumes:
+  db-data:
