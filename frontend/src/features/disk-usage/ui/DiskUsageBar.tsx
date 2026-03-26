@@ -34,6 +34,10 @@ const DiskUsageBar = ({ data }: DiskUsageBarProps) => {
 
       <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden mb-4">
         <div
+          role="progressbar"
+          aria-valuenow={roundedPercent}
+          aria-valuemin={0}
+          aria-valuemax={100}
           className={`h-full rounded-full transition-all duration-700 ${barColor}`}
           style={{ width: `${used_percent}%` }}
         />

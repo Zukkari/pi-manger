@@ -1,0 +1,59 @@
+import { render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+
+import * as diskUsageHook from '@/features/disk-usage/queries/useDiskUsage';
+
+import PageDashboard from './PageDashboard';
+
+vi.mock('@/features/disk-usage/queries/useDiskUsage');
+
+const mockUseDiskUsage = vi.spyOn(diskUsageHook, 'useDiskUsage');
+
+const mockData = {
+  path: '/data',
+  total_bytes: 100 * 1024 ** 3,
+  used_bytes: 40 * 1024 ** 3,
+  free_bytes: 60 * 1024 ** 3,
+  used_percent: 40,
+};
+
+describe('PageDashboard', () => {
+  it('renders a loading spinner while fetching', () => {
+    mockUseDiskUsage.mockReturnValue({
+      data: undefined,
+      isLoading: true,
+      isError: false,
+    } as ReturnType<typeof diskUsageHook.useDiskUsage>);
+
+    render(<PageDashboard />);
+
+    expect(screen.queryByText('Dashboard')).not.toBeInTheDocument();
+    expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+  });
+
+  it('renders an error message when the query fails', () => {
+    mockUseDiskUsage.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+    } as ReturnType<typeof diskUsageHook.useDiskUsage>);
+
+    render(<PageDashboard />);
+
+    expect(screen.getByText(/failed to load disk usage/i)).toBeInTheDocument();
+  });
+
+  it('renders the dashboard heading and disk usage bar on success', () => {
+    mockUseDiskUsage.mockReturnValue({
+      data: mockData,
+      isLoading: false,
+      isError: false,
+    } as ReturnType<typeof diskUsageHook.useDiskUsage>);
+
+    render(<PageDashboard />);
+
+    expect(screen.getByText('Dashboard')).toBeInTheDocument();
+    expect(screen.getByRole('progressbar')).toBeInTheDocument();
+    expect(screen.getByText('/data')).toBeInTheDocument();
+  });
+});

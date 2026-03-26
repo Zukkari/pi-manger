@@ -1,3 +1,3 @@
-export enum QueryKeys {
-  DISK_USAGE = 'disk-usage',
-}
+export const QueryKeys = {
+  DISK_USAGE: 'disk-usage',
+} as const;
