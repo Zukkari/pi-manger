@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
-import DiskUsageBar from './DiskUsageBar';
+import { DiskUsageBar } from './DiskUsageBar';
 import type { DiskUsageBarProps } from './DiskUsageBar.types';
 
 const baseProps: DiskUsageBarProps = {

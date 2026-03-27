@@ -1,6 +1,6 @@
 import { DiskUsageBar, useDiskUsage } from '@/features/disk-usage';
 
-const PageDashboard = () => {
+export const PageDashboard = () => {
   const { data, isLoading, isError } = useDiskUsage();
 
   if (isLoading) {
@@ -26,5 +26,3 @@ const PageDashboard = () => {
     </div>
   );
 };
-
-export default PageDashboard;

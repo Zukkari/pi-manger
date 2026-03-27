@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import * as diskUsageHook from '@/features/disk-usage/queries/useDiskUsage';
 
-import PageDashboard from './PageDashboard';
+import { PageDashboard } from './PageDashboard';
 
 vi.mock('@/features/disk-usage/queries/useDiskUsage');
 

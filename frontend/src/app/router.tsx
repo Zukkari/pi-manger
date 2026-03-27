@@ -1,7 +1,7 @@
 import { createRootRoute, createRoute, createRouter } from '@tanstack/react-router';
 
-import LayoutMain from '@/layouts/LayoutMain';
-import PageDashboard from '@/pages/dashboard/PageDashboard';
+import { LayoutMain } from '@/layouts/LayoutMain';
+import { PageDashboard } from '@/pages/dashboard/PageDashboard';
 
 const rootRoute = createRootRoute({
   component: LayoutMain,

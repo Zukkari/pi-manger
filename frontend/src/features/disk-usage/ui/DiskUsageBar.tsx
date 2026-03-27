@@ -13,7 +13,7 @@ const getBarColor = (percent: number): string => {
   return 'bg-blue-500';
 };
 
-const DiskUsageBar = ({ data }: DiskUsageBarProps) => {
+export const DiskUsageBar = ({ data }: DiskUsageBarProps) => {
   const { path, total_bytes, used_bytes, free_bytes, used_percent } = data;
   const barColor = getBarColor(used_percent);
   const roundedPercent = Math.round(used_percent);
@@ -51,5 +51,3 @@ const DiskUsageBar = ({ data }: DiskUsageBarProps) => {
     </div>
   );
 };
-
-export default DiskUsageBar;
