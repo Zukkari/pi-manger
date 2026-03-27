@@ -20,15 +20,17 @@ export const FileBrowserWidget = () => {
   const { parent_id } = useSearch({ from: '/files' });
   const navigate = useNavigate();
 
-  const [rootName, setRootName] = useState('Root');
   const [stack, setStack] = useState<BreadcrumbEntry[]>([{ id: undefined, name: 'Root' }]);
 
   const { data, isLoading, isError } = useFiles(parent_id);
 
   useEffect(() => {
-    if (parent_id === undefined && data && data.length > 0) {
-      const name = deriveFolderName(data);
-      if (name) setRootName(name);
+    if (parent_id !== undefined || !data || data.length === 0) return;
+    // Scanner stores MANAGED_DIR itself as the sole root entry — auto-enter it
+    if (data.length === 1 && data[0].is_dir) {
+      const root = data[0];
+      setStack([{ id: root.id, name: root.name }]);
+      navigate({ to: '/files', search: { parent_id: root.id } });
     }
   }, [data, parent_id]);
 
@@ -48,15 +50,14 @@ export const FileBrowserWidget = () => {
     );
   }
 
-  // Derive breadcrumb name on refresh (stack only has Root)
-  const isInsideFolder = parent_id !== undefined;
+  // Derive breadcrumb on refresh (stack still has initial placeholder)
   const effectiveStack: BreadcrumbEntry[] = (() => {
-    if (!isInsideFolder) return stack;
-    if (stack.length > 1) return stack;
+    if (stack.length > 1 || stack[0].id !== undefined) return stack;
+    if (parent_id === undefined) return stack;
     // refreshed mid-tree — infer folder name from children
     const inferred = deriveFolderName(data);
     return inferred
-      ? [{ id: undefined, name: rootName }, { id: parent_id, name: inferred }]
+      ? [{ id: undefined, name: 'Root' }, { id: parent_id, name: inferred }]
       : [];
   })();
 
@@ -66,8 +67,13 @@ export const FileBrowserWidget = () => {
   };
 
   const handleNavigateUp = () => {
+    if (effectiveStack.length === 0) {
+      setStack([{ id: undefined, name: 'Root' }]);
+      navigate({ to: '/files', search: { parent_id: undefined } });
+      return;
+    }
     const newStack = effectiveStack.slice(0, -1);
-    setStack(newStack);
+    setStack(newStack.length > 0 ? newStack : [{ id: undefined, name: 'Root' }]);
     const parent = newStack[newStack.length - 1];
     if (!parent || parent.id === undefined) {
       navigate({ to: '/files', search: { parent_id: undefined } });
@@ -88,8 +94,8 @@ export const FileBrowserWidget = () => {
               {i === 0 && !isLast ? (
                 <Link
                   to="/files"
-                  search={{ parent_id: undefined }}
-                  onClick={() => setStack([{ id: undefined, name: rootName }])}
+                  search={{ parent_id: crumb.id }}
+                  onClick={() => setStack([{ id: crumb.id, name: crumb.name }])}
                   className="text-xs font-medium text-blue-500 hover:underline"
                 >
                   {crumb.name}
@@ -106,13 +112,13 @@ export const FileBrowserWidget = () => {
 
       {/* File list */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        {isInsideFolder && (
+        {(effectiveStack.length > 1 || (stack[0].id === undefined && parent_id !== undefined)) && (
           <>
             <FileRow isParent onParentClick={handleNavigateUp} />
             <div className="border-t border-gray-50" />
           </>
         )}
-        {data.length === 0 && !isInsideFolder && (
+        {data.length === 0 && (
           <p className="text-sm text-gray-400 text-center py-10">Empty directory</p>
         )}
         {data.map((entry, i) => (
