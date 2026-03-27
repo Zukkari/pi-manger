@@ -1,4 +1,4 @@
-import { Fragment, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 
 import type { FileEntry } from '../files.types';
@@ -20,9 +20,17 @@ export const FileBrowserWidget = () => {
   const { parent_id } = useSearch({ from: '/files' });
   const navigate = useNavigate();
 
+  const [rootName, setRootName] = useState('Root');
   const [stack, setStack] = useState<BreadcrumbEntry[]>([{ id: undefined, name: 'Root' }]);
 
   const { data, isLoading, isError } = useFiles(parent_id);
+
+  useEffect(() => {
+    if (parent_id === undefined && data && data.length > 0) {
+      const name = deriveFolderName(data);
+      if (name) setRootName(name);
+    }
+  }, [data, parent_id]);
 
   if (isLoading) {
     return (
@@ -48,7 +56,7 @@ export const FileBrowserWidget = () => {
     // refreshed mid-tree — infer folder name from children
     const inferred = deriveFolderName(data);
     return inferred
-      ? [{ id: undefined, name: 'Root' }, { id: parent_id, name: inferred }]
+      ? [{ id: undefined, name: rootName }, { id: parent_id, name: inferred }]
       : [];
   })();
 
@@ -81,7 +89,7 @@ export const FileBrowserWidget = () => {
                 <Link
                   to="/files"
                   search={{ parent_id: undefined }}
-                  onClick={() => setStack([{ id: undefined, name: 'Root' }])}
+                  onClick={() => setStack([{ id: undefined, name: rootName }])}
                   className="text-xs font-medium text-blue-500 hover:underline"
                 >
                   {crumb.name}
