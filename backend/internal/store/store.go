@@ -71,7 +71,7 @@ func (s *Store) DeleteMissing(ctx context.Context, paths []string) error {
 // Pass a zero sql.NullInt64 (Valid=false) to get root-level entries.
 func (s *Store) ListChildren(ctx context.Context, parentID sql.NullInt64) ([]File, error) {
 	const rootQ = `SELECT id, parent_id, path, name, size, is_dir, modified_at, synced_at
-FROM files WHERE parent_id IS NULL ORDER BY is_dir DESC, name ASC`
+FROM files WHERE parent_id = (SELECT id FROM files WHERE parent_id IS NULL LIMIT 1) ORDER BY is_dir DESC, name ASC`
 	const childQ = `SELECT id, parent_id, path, name, size, is_dir, modified_at, synced_at
 FROM files WHERE parent_id = ? ORDER BY is_dir DESC, name ASC`
 

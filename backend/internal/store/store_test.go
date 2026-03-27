@@ -123,26 +123,35 @@ func TestListChildren_ReturnsRootEntries(t *testing.T) {
 	ctx := context.Background()
 	now := time.Now().Unix()
 
-	// Insert a root-level dir and a root-level file.
-	dirID, err := s.UpsertFile(ctx, UpsertFileParams{
-		Path: "/data/docs", Name: "docs", IsDir: 1, ModifiedAt: now, SyncedAt: now,
+	// Insert the managed root folder (no parent) — scanner always creates this first.
+	rootID, err := s.UpsertFile(ctx, UpsertFileParams{
+		Path: "/data", Name: "data", IsDir: 1, ModifiedAt: now, SyncedAt: now,
+	})
+	if err != nil {
+		t.Fatalf("upsert root: %v", err)
+	}
+	// Insert direct children of root.
+	docsID, err := s.UpsertFile(ctx, UpsertFileParams{
+		ParentID: sql.NullInt64{Int64: rootID, Valid: true},
+		Path:     "/data/docs", Name: "docs", IsDir: 1, ModifiedAt: now, SyncedAt: now,
 	})
 	if err != nil {
 		t.Fatalf("upsert dir: %v", err)
 	}
 	_, err = s.UpsertFile(ctx, UpsertFileParams{
-		Path: "/data/readme.txt", Name: "readme.txt", Size: 512, ModifiedAt: now, SyncedAt: now,
+		ParentID: sql.NullInt64{Int64: rootID, Valid: true},
+		Path:     "/data/readme.txt", Name: "readme.txt", Size: 512, ModifiedAt: now, SyncedAt: now,
 	})
 	if err != nil {
 		t.Fatalf("upsert file: %v", err)
 	}
-	// Insert a child that must NOT appear in root results.
+	// Insert a grandchild — must NOT appear in the root listing.
 	_, err = s.UpsertFile(ctx, UpsertFileParams{
-		ParentID: sql.NullInt64{Int64: dirID, Valid: true},
+		ParentID: sql.NullInt64{Int64: docsID, Valid: true},
 		Path:     "/data/docs/note.txt", Name: "note.txt", ModifiedAt: now, SyncedAt: now,
 	})
 	if err != nil {
-		t.Fatalf("upsert child: %v", err)
+		t.Fatalf("upsert grandchild: %v", err)
 	}
 
 	files, err := s.ListChildren(ctx, sql.NullInt64{})

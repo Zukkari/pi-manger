@@ -30,18 +30,26 @@ func TestFilesHandler_RootReturnsRootChildren(t *testing.T) {
 	ctx := context.Background()
 	now := time.Now().Unix()
 
-	dirID, err := s.UpsertFile(ctx, store.UpsertFileParams{
-		Path: "/data/docs", Name: "docs", IsDir: 1, ModifiedAt: now, SyncedAt: now,
+	// Insert managed root folder (no parent) then a direct child.
+	rootID, err := s.UpsertFile(ctx, store.UpsertFileParams{
+		Path: "/data", Name: "data", IsDir: 1, ModifiedAt: now, SyncedAt: now,
 	})
 	if err != nil {
-		t.Fatalf("upsert: %v", err)
+		t.Fatalf("upsert root: %v", err)
 	}
-	// Child should NOT appear in root response.
+	dirID, err := s.UpsertFile(ctx, store.UpsertFileParams{
+		ParentID: sql.NullInt64{Int64: rootID, Valid: true},
+		Path:     "/data/docs", Name: "docs", IsDir: 1, ModifiedAt: now, SyncedAt: now,
+	})
+	if err != nil {
+		t.Fatalf("upsert dir: %v", err)
+	}
+	// Grandchild should NOT appear in the root response.
 	if _, err := s.UpsertFile(ctx, store.UpsertFileParams{
 		ParentID: sql.NullInt64{Int64: dirID, Valid: true},
 		Path:     "/data/docs/note.txt", Name: "note.txt", ModifiedAt: now, SyncedAt: now,
 	}); err != nil {
-		t.Fatalf("upsert child: %v", err)
+		t.Fatalf("upsert grandchild: %v", err)
 	}
 
 	h := handler.NewFilesHandler(s)
