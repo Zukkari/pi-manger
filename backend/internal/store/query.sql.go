@@ -10,7 +10,39 @@ import (
 	"database/sql"
 )
 
+const deleteFile = `-- name: DeleteFile :exec
+DELETE FROM files WHERE id = ?
+`
+
+func (q *Queries) DeleteFile(ctx context.Context, id int64) error {
+	_, err := q.db.ExecContext(ctx, deleteFile, id)
+	return err
+}
+
+const getFile = `-- name: GetFile :one
+SELECT id, parent_id, path, name, size, is_dir, modified_at, synced_at
+FROM files
+WHERE id = ?
+`
+
+func (q *Queries) GetFile(ctx context.Context, id int64) (File, error) {
+	row := q.db.QueryRowContext(ctx, getFile, id)
+	var i File
+	err := row.Scan(
+		&i.ID,
+		&i.ParentID,
+		&i.Path,
+		&i.Name,
+		&i.Size,
+		&i.IsDir,
+		&i.ModifiedAt,
+		&i.SyncedAt,
+	)
+	return i, err
+}
+
 const upsertFile = `-- name: UpsertFile :one
+
 INSERT INTO files (parent_id, path, name, size, is_dir, modified_at, synced_at)
 VALUES (?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT(path) DO UPDATE SET
@@ -33,6 +65,8 @@ type UpsertFileParams struct {
 	SyncedAt   int64
 }
 
+// DeleteMissing is NOT sqlc-generated: sqlc v1.30.0 does not support dynamic
+// IN-clause slice params for SQLite. It is implemented as raw SQL in store.go.
 func (q *Queries) UpsertFile(ctx context.Context, arg UpsertFileParams) (int64, error) {
 	row := q.db.QueryRowContext(ctx, upsertFile,
 		arg.ParentID,

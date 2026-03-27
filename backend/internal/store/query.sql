@@ -12,3 +12,11 @@ ON CONFLICT(path) DO UPDATE SET
     modified_at = excluded.modified_at,
     synced_at   = excluded.synced_at
 RETURNING id;
+
+-- name: GetFile :one
+SELECT id, parent_id, path, name, size, is_dir, modified_at, synced_at
+FROM files
+WHERE id = ?;
+
+-- name: DeleteFile :exec
+DELETE FROM files WHERE id = ?;
