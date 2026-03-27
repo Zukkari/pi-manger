@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 
 import type { FileEntry } from '../files.types';
@@ -108,10 +108,10 @@ export const FileBrowserWidget = () => {
           <p className="text-sm text-gray-400 text-center py-10">Empty directory</p>
         )}
         {data.map((entry, i) => (
-          <span key={entry.id}>
+          <Fragment key={entry.id}>
             {i > 0 && <div className="border-t border-gray-50 mx-4" />}
             <FileRow entry={entry} onClick={handleNavigateInto} />
-          </span>
+          </Fragment>
         ))}
       </div>
     </div>

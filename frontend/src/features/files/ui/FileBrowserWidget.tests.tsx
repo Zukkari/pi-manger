@@ -89,4 +89,29 @@ describe('FileBrowserWidget', () => {
 
     expect(navigate).toHaveBeenCalledWith({ to: '/files', search: { parent_id: 1 } });
   });
+
+  it('navigates up when the .. row is clicked', async () => {
+    const navigate = vi.fn();
+    mockUseSearch.mockReturnValue({ parent_id: 1 });
+    mockUseNavigate.mockReturnValue(navigate);
+    const children = [
+      { id: 3, parent_id: 1, name: 'jan.tar.gz', path: '/backups/jan.tar.gz', size: 1024, is_dir: false, modified_at: 0 },
+    ];
+    mockUseFiles.mockReturnValue({ data: children, isLoading: false, isError: false } as ReturnType<typeof filesHook.useFiles>);
+
+    render(<FileBrowserWidget />);
+    await userEvent.click(screen.getByRole('button', { name: /go to parent directory/i }));
+
+    expect(navigate).toHaveBeenCalledWith({ to: '/files', search: {} });
+  });
+
+  it('renders without crashing when inside an empty folder on refresh', () => {
+    mockUseSearch.mockReturnValue({ parent_id: 1 });
+    mockUseNavigate.mockReturnValue(vi.fn());
+    mockUseFiles.mockReturnValue({ data: [], isLoading: false, isError: false } as ReturnType<typeof filesHook.useFiles>);
+
+    render(<FileBrowserWidget />);
+
+    expect(screen.getByText('..')).toBeInTheDocument();
+  });
 });
