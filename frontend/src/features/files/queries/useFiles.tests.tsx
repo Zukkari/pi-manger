@@ -36,5 +36,6 @@ describe('useFiles', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(mockFetchFiles).toHaveBeenCalledWith(42);
+    expect(result.current.data).toEqual([]);
   });
 });
