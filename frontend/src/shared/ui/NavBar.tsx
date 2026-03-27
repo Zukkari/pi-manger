@@ -27,6 +27,7 @@ export const NavBar = () => {
     <nav className="fixed bottom-3 left-1/2 -translate-x-1/2 z-50">
       <div className="flex gap-1 bg-white/80 backdrop-blur-md rounded-2xl px-4 py-2 shadow-md ring-1 ring-black/[0.06]">
         <button
+          type="button"
           aria-label="Home"
           data-active={isHome || undefined}
           onClick={() => navigate({ to: '/' })}
@@ -35,12 +36,13 @@ export const NavBar = () => {
           }`}
         >
           <HomeIcon active={isHome} />
-          <span className={`text-[10px] font-${isHome ? 'bold' : 'medium'} ${isHome ? 'text-blue-500' : 'text-gray-400'}`}>
+          <span className={isHome ? 'text-[10px] font-bold text-blue-500' : 'text-[10px] font-medium text-gray-400'}>
             Home
           </span>
         </button>
 
         <button
+          type="button"
           aria-label="Files"
           data-active={isFiles || undefined}
           onClick={() => navigate({ to: '/files' })}
@@ -49,7 +51,7 @@ export const NavBar = () => {
           }`}
         >
           <FilesIcon active={isFiles} />
-          <span className={`text-[10px] font-${isFiles ? 'bold' : 'medium'} ${isFiles ? 'text-blue-500' : 'text-gray-400'}`}>
+          <span className={isFiles ? 'text-[10px] font-bold text-blue-500' : 'text-[10px] font-medium text-gray-400'}>
             Files
           </span>
         </button>
