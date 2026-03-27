@@ -63,7 +63,7 @@ func (h *DeleteFileHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := os.RemoveAll(file.Path); err != nil {
+	if err := h.store.DeleteFile(r.Context(), id); err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
 		if err := json.NewEncoder(w).Encode(errorResponse{Error: err.Error()}); err != nil {
@@ -72,7 +72,7 @@ func (h *DeleteFileHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.store.DeleteFile(r.Context(), id); err != nil {
+	if err := os.RemoveAll(file.Path); err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
 		if err := json.NewEncoder(w).Encode(errorResponse{Error: err.Error()}); err != nil {
