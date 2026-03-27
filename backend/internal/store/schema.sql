@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS files (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    id          INTEGER PRIMARY KEY,
     parent_id   INTEGER REFERENCES files(id) ON DELETE CASCADE,
     path        TEXT    NOT NULL UNIQUE,
     name        TEXT    NOT NULL,
