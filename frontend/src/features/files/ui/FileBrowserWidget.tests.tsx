@@ -114,4 +114,16 @@ describe('FileBrowserWidget', () => {
 
     expect(screen.getByText('..')).toBeInTheDocument();
   });
+
+  it('navigates to root when .. is clicked inside an empty folder on refresh', async () => {
+    const navigate = vi.fn();
+    mockUseSearch.mockReturnValue({ parent_id: 1 });
+    mockUseNavigate.mockReturnValue(navigate);
+    mockUseFiles.mockReturnValue({ data: [], isLoading: false, isError: false } as unknown as ReturnType<typeof filesHook.useFiles>);
+
+    render(<FileBrowserWidget />);
+    await userEvent.click(screen.getByRole('button', { name: /go to parent directory/i }));
+
+    expect(navigate).toHaveBeenCalledWith({ to: '/files', search: { parent_id: undefined } });
+  });
 });

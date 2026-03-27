@@ -61,7 +61,7 @@ export const FileBrowserWidget = () => {
     const newStack = effectiveStack.slice(0, -1);
     setStack(newStack);
     const parent = newStack[newStack.length - 1];
-    if (parent.id === undefined) {
+    if (!parent || parent.id === undefined) {
       navigate({ to: '/files', search: { parent_id: undefined } });
     } else {
       navigate({ to: '/files', search: { parent_id: parent.id } });
