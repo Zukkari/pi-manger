@@ -11,7 +11,9 @@ interface BreadcrumbEntry {
 }
 
 const deriveFolderName = (children: FileEntry[]): string | undefined => {
-  if (children.length === 0) return undefined;
+  if (children.length === 0) {
+    return undefined;
+  }
   const parts = children[0].path.split('/').filter(Boolean);
   return parts.length >= 2 ? parts[parts.length - 2] : undefined;
 };
@@ -26,11 +28,15 @@ export const FileBrowserWidget = () => {
   const { data, isLoading, isError } = useFiles(parent_id);
 
   useEffect(() => {
-    if (parent_id === undefined && data && data.length > 0) {
-      const name = deriveFolderName(data);
-      if (name) setRootName(name);
+    if (parent_id !== undefined) {
+      return;
     }
-  }, [data, parent_id]);
+    const name = data && data.length > 0 ? deriveFolderName(data) : undefined;
+    if (name) {
+      setRootName(name);
+    }
+    setStack([{ id: undefined, name: name ?? rootName }]);
+  }, [parent_id, data]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (isLoading) {
     return (
@@ -52,8 +58,12 @@ export const FileBrowserWidget = () => {
 
   // Derive breadcrumb on refresh (stack still has initial placeholder)
   const effectiveStack: BreadcrumbEntry[] = (() => {
-    if (!isInsideFolder) return stack;
-    if (stack.length > 1) return stack;
+    if (!isInsideFolder) {
+      return stack;
+    }
+    if (stack.length > 1) {
+      return stack;
+    }
     // refreshed mid-tree — infer folder name from children
     const inferred = deriveFolderName(data);
     return inferred
