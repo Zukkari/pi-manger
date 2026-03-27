@@ -48,8 +48,15 @@ export const FileRow = ({ isParent, entry, onClick, onParentClick, onDelete }: F
         setMenuOpen(false);
       }
     };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMenuOpen(false);
+    };
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
   }, [menuOpen]);
 
   if (isParent) {
@@ -115,7 +122,6 @@ export const FileRow = ({ isParent, entry, onClick, onParentClick, onDelete }: F
           <div
             role="menu"
             aria-label="File actions"
-            onKeyDown={(e) => { if (e.key === 'Escape') setMenuOpen(false); }}
             className="absolute right-0 top-full z-10 bg-white shadow-md rounded-lg border border-gray-100 py-1 min-w-[120px]"
           >
             <button
