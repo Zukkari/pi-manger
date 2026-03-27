@@ -77,6 +77,7 @@ func main() {
 	mux := http.NewServeMux()
 	mux.Handle("/api/disk", handler.NewDiskHandler(managedDir))
 	mux.Handle("/api/files", handler.NewFilesHandler(db))
+	mux.Handle("/api/files/", handler.NewDeleteFileHandler(db))
 
 	addr := ":" + port
 	log.Printf("pi-manager starting on %s (MANAGED_DIR=%s, DB_PATH=%s)", addr, managedDir, dbPath)
