@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"path/filepath"
 	"testing"
 	"time"
@@ -220,5 +221,90 @@ func TestListChildren_NonExistentParentReturnsEmpty(t *testing.T) {
 	}
 	if len(files) != 0 {
 		t.Fatalf("expected 0 results for non-existent parent, got %d", len(files))
+	}
+}
+
+func TestGetFile_ReturnsFileByID(t *testing.T) {
+	s := openTestStore(t)
+	ctx := context.Background()
+	now := time.Now().Unix()
+
+	id, err := s.UpsertFile(ctx, UpsertFileParams{
+		Path: "/data/foo.txt", Name: "foo.txt", Size: 512,
+		ModifiedAt: now, SyncedAt: now,
+	})
+	if err != nil {
+		t.Fatalf("upsert: %v", err)
+	}
+
+	f, err := s.GetFile(ctx, id)
+	if err != nil {
+		t.Fatalf("GetFile: %v", err)
+	}
+	if f.ID != id {
+		t.Errorf("expected id %d, got %d", id, f.ID)
+	}
+	if f.Path != "/data/foo.txt" {
+		t.Errorf("expected path /data/foo.txt, got %s", f.Path)
+	}
+}
+
+func TestGetFile_MissingIDReturnsErrNoRows(t *testing.T) {
+	s := openTestStore(t)
+
+	_, err := s.GetFile(context.Background(), 9999)
+	if !errors.Is(err, sql.ErrNoRows) {
+		t.Errorf("expected sql.ErrNoRows, got %v", err)
+	}
+}
+
+func TestDeleteFile_RemovesRecord(t *testing.T) {
+	s := openTestStore(t)
+	ctx := context.Background()
+	now := time.Now().Unix()
+
+	id, err := s.UpsertFile(ctx, UpsertFileParams{
+		Path: "/data/foo.txt", Name: "foo.txt", ModifiedAt: now, SyncedAt: now,
+	})
+	if err != nil {
+		t.Fatalf("upsert: %v", err)
+	}
+
+	if err := s.DeleteFile(ctx, id); err != nil {
+		t.Fatalf("DeleteFile: %v", err)
+	}
+
+	_, err = s.GetFile(ctx, id)
+	if !errors.Is(err, sql.ErrNoRows) {
+		t.Errorf("expected record gone (ErrNoRows), got %v", err)
+	}
+}
+
+func TestDeleteFile_CascadesChildren(t *testing.T) {
+	s := openTestStore(t)
+	ctx := context.Background()
+	now := time.Now().Unix()
+
+	dirID, err := s.UpsertFile(ctx, UpsertFileParams{
+		Path: "/data/docs", Name: "docs", IsDir: 1, ModifiedAt: now, SyncedAt: now,
+	})
+	if err != nil {
+		t.Fatalf("upsert dir: %v", err)
+	}
+	childID, err := s.UpsertFile(ctx, UpsertFileParams{
+		ParentID: sql.NullInt64{Int64: dirID, Valid: true},
+		Path:     "/data/docs/note.txt", Name: "note.txt", ModifiedAt: now, SyncedAt: now,
+	})
+	if err != nil {
+		t.Fatalf("upsert child: %v", err)
+	}
+
+	if err := s.DeleteFile(ctx, dirID); err != nil {
+		t.Fatalf("DeleteFile: %v", err)
+	}
+
+	_, err = s.GetFile(ctx, childID)
+	if !errors.Is(err, sql.ErrNoRows) {
+		t.Errorf("expected child cascaded (ErrNoRows), got %v", err)
 	}
 }

@@ -99,3 +99,15 @@ FROM files WHERE parent_id = ? ORDER BY is_dir DESC, name ASC`
 	}
 	return files, rows.Err()
 }
+
+// GetFile returns the file record with the given id.
+// Returns sql.ErrNoRows if no record exists.
+func (s *Store) GetFile(ctx context.Context, id int64) (File, error) {
+	return s.queries.GetFile(ctx, id)
+}
+
+// DeleteFile removes the file record with the given id.
+// ON DELETE CASCADE removes all descendant records automatically.
+func (s *Store) DeleteFile(ctx context.Context, id int64) error {
+	return s.queries.DeleteFile(ctx, id)
+}
