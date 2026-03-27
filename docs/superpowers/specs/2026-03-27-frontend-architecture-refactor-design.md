@@ -13,6 +13,7 @@
 1. Components fetch their own data; a failing widget must not block the page
 2. Pages contain only layouts and components — zero raw HTML elements
 3. Layouts may contain base HTML but no business logic
+4. Only named exports — no `export default` anywhere in the codebase
 
 ---
 
@@ -59,9 +60,22 @@ Add `DiskUsageWidget` to barrel exports.
 
 ---
 
+### Modified: `features/disk-usage/ui/DiskUsageBar.tsx`
+
+Convert `export default` to named export. Tests updated to match.
+
+### Modified: `app/providers/QueryProvider.tsx`
+
+Convert `export default` to named export.
+
+### Modified: `layouts/LayoutMain.tsx`
+
+Convert `export default` to named export. Update import in `app/router.tsx`.
+
+---
+
 ## Unchanged
 
-- `DiskUsageBar.tsx` and `DiskUsageBar.tests.tsx` — pure display component, no changes
+- `DiskUsageBar.tests.tsx` — logic unchanged, import updated if needed
 - All `api/` and `queries/` files
-- `LayoutMain.tsx`, `app/router.tsx`, `app/providers/`
 - `shared/api/client.ts`
