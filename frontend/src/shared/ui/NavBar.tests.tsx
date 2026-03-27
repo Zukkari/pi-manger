@@ -53,6 +53,6 @@ describe('NavBar', () => {
     render(<NavBar />);
     await userEvent.click(screen.getByRole('button', { name: /files/i }));
 
-    expect(navigate).toHaveBeenCalledWith({ to: '/files' });
+    expect(navigate).toHaveBeenCalledWith({ to: '/files', search: { parent_id: undefined } });
   });
 });

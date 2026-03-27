@@ -2,6 +2,7 @@ import { createRootRoute, createRoute, createRouter } from '@tanstack/react-rout
 
 import { LayoutMain } from '@/layouts/LayoutMain';
 import { PageDashboard } from '@/pages/dashboard/PageDashboard';
+import { PageFiles } from '@/pages/files/PageFiles';
 
 const rootRoute = createRootRoute({
   component: LayoutMain,
@@ -13,7 +14,16 @@ const dashboardRoute = createRoute({
   component: PageDashboard,
 });
 
-const routeTree = rootRoute.addChildren([dashboardRoute]);
+const filesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/files',
+  validateSearch: (search: Record<string, unknown>) => ({
+    parent_id: typeof search.parent_id === 'number' ? search.parent_id : undefined,
+  }),
+  component: PageFiles,
+});
+
+const routeTree = rootRoute.addChildren([dashboardRoute, filesRoute]);
 
 export const router = createRouter({ routeTree });
 

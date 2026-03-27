@@ -45,7 +45,7 @@ export const NavBar = () => {
           type="button"
           aria-label="Files"
           data-active={isFiles || undefined}
-          onClick={() => navigate({ to: '/files' })}
+          onClick={() => navigate({ to: '/files', search: { parent_id: undefined } })}
           className={`flex flex-col items-center gap-1 px-5 py-1.5 rounded-xl transition-colors ${
             isFiles ? 'bg-blue-50' : ''
           }`}

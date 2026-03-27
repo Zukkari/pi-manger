@@ -62,7 +62,7 @@ export const FileBrowserWidget = () => {
     setStack(newStack);
     const parent = newStack[newStack.length - 1];
     if (parent.id === undefined) {
-      navigate({ to: '/files', search: {} });
+      navigate({ to: '/files', search: { parent_id: undefined } });
     } else {
       navigate({ to: '/files', search: { parent_id: parent.id } });
     }
@@ -80,7 +80,7 @@ export const FileBrowserWidget = () => {
               {i === 0 && !isLast ? (
                 <Link
                   to="/files"
-                  search={{}}
+                  search={{ parent_id: undefined }}
                   onClick={() => setStack([{ id: undefined, name: 'Root' }])}
                   className="text-xs font-medium text-blue-500 hover:underline"
                 >
