@@ -27,6 +27,7 @@ describe('DiskUsageWidget', () => {
 
     render(<DiskUsageWidget />);
 
+    expect(screen.getByRole('status')).toBeInTheDocument();
     expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
   });
 
