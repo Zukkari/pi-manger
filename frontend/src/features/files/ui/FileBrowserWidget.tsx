@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, useSearch } from '@tanstack/react-router';
+import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 
 import type { FileEntry } from '../files.types';
 import { useFiles } from '../queries/useFiles';
@@ -49,7 +49,7 @@ export const FileBrowserWidget = () => {
     const inferred = deriveFolderName(data);
     return inferred
       ? [{ id: undefined, name: 'Root' }, { id: parent_id, name: inferred }]
-      : [{ id: undefined, name: 'Root' }];
+      : [];
   })();
 
   const handleNavigateInto = (entry: FileEntry) => {
@@ -68,11 +68,6 @@ export const FileBrowserWidget = () => {
     }
   };
 
-  const handleBreadcrumbRoot = () => {
-    setStack([{ id: undefined, name: 'Root' }]);
-    navigate({ to: '/files', search: {} });
-  };
-
   return (
     <div className="flex flex-col gap-4">
       {/* Breadcrumb */}
@@ -83,13 +78,14 @@ export const FileBrowserWidget = () => {
             <span key={i} className="flex items-center gap-1">
               {i > 0 && <span className="text-gray-300 text-xs">›</span>}
               {i === 0 && !isLast ? (
-                <button
-                  type="button"
-                  onClick={handleBreadcrumbRoot}
+                <Link
+                  to="/files"
+                  search={{}}
+                  onClick={() => setStack([{ id: undefined, name: 'Root' }])}
                   className="text-xs font-medium text-blue-500 hover:underline"
                 >
                   {crumb.name}
-                </button>
+                </Link>
               ) : (
                 <span className={`text-xs ${isLast ? 'font-semibold text-gray-900' : 'font-medium text-blue-500'}`}>
                   {crumb.name}

@@ -1,3 +1,4 @@
+import React from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
@@ -5,6 +6,7 @@ import { describe, expect, it, vi } from 'vitest';
 vi.mock('@tanstack/react-router', () => ({
   useSearch: vi.fn(),
   useNavigate: vi.fn(),
+  Link: ({ children, onClick, className }: { children: React.ReactNode; onClick?: () => void; className?: string }) => <a onClick={onClick} className={className}>{children}</a>,
 }));
 vi.mock('../queries/useFiles');
 
