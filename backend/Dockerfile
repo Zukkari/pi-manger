@@ -6,7 +6,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o api ./cmd/api
 
 # Run stage is explicitly linux/arm64 (Raspberry Pi)
 FROM --platform=linux/arm64 alpine:3.19
-RUN adduser -D -u 1000 appuser
+RUN adduser -D -u 1000 appuser && mkdir -p /db && chown appuser /db
 WORKDIR /app
 COPY --from=builder /app/api .
 EXPOSE 8080
