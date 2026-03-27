@@ -3,6 +3,7 @@ services:
     build:
       context: ./backend
     platform: linux/arm64
+    user: "0"
     expose:
       - "8080"
     environment:
