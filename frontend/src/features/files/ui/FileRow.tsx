@@ -70,30 +70,42 @@ export const FileRow = ({ isParent, entry, onClick, onParentClick, onDelete }: F
 
   const isDir = entry.is_dir;
 
+  const innerContent = (
+    <>
+      <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+        isDir ? 'bg-blue-50' : 'bg-gray-100'
+      }`}>
+        {isDir ? <FolderIcon /> : <FileIcon />}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-gray-900 truncate">{entry.name}</p>
+        <p className="text-xs text-gray-400 mt-0.5">{isDir ? '—' : formatFileSize(entry.size)}</p>
+      </div>
+    </>
+  );
+
   return (
     <div className="w-full flex items-center gap-3 px-4 py-3 transition-colors hover:bg-gray-50">
-      <button
-        type="button"
-        onClick={isDir ? () => onClick(entry) : undefined}
-        className={`flex items-center gap-3 flex-1 min-w-0 text-left ${
-          isDir ? 'cursor-pointer' : 'cursor-default'
-        }`}
-      >
-        <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-          isDir ? 'bg-blue-50' : 'bg-gray-100'
-        }`}>
-          {isDir ? <FolderIcon /> : <FileIcon />}
+      {isDir ? (
+        <button
+          type="button"
+          onClick={() => onClick(entry)}
+          className="flex items-center gap-3 flex-1 min-w-0 text-left cursor-pointer"
+        >
+          {innerContent}
+        </button>
+      ) : (
+        <div className="flex items-center gap-3 flex-1 min-w-0 cursor-default">
+          {innerContent}
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-gray-900 truncate">{entry.name}</p>
-          <p className="text-xs text-gray-400 mt-0.5">{isDir ? '—' : formatFileSize(entry.size)}</p>
-        </div>
-      </button>
+      )}
 
       <div ref={menuRef} className="relative shrink-0">
         <button
           type="button"
           aria-label="More options"
+          aria-haspopup="menu"
+          aria-expanded={menuOpen}
           onClick={(e) => { e.stopPropagation(); setMenuOpen(o => !o); }}
           className="w-7 h-7 flex items-center justify-center rounded-md text-gray-400 hover:text-gray-700 hover:bg-gray-100"
         >
@@ -102,6 +114,8 @@ export const FileRow = ({ isParent, entry, onClick, onParentClick, onDelete }: F
         {menuOpen && (
           <div
             role="menu"
+            aria-label="File actions"
+            onKeyDown={(e) => { if (e.key === 'Escape') setMenuOpen(false); }}
             className="absolute right-0 top-full z-10 bg-white shadow-md rounded-lg border border-gray-100 py-1 min-w-[120px]"
           >
             <button
