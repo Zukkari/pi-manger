@@ -18,7 +18,7 @@ const filesRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/files',
   validateSearch: (search: Record<string, unknown>) => ({
-    parent_id: typeof search.parent_id === 'number' ? search.parent_id : undefined,
+    parent_id: search.parent_id !== undefined ? Number(search.parent_id) : undefined,
   }),
   component: PageFiles,
 });
