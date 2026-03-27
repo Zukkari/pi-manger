@@ -2,7 +2,9 @@ import { Fragment, useEffect, useState } from 'react';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 
 import type { FileEntry } from '../files.types';
+import { useDeleteFile } from '../queries/useDeleteFile';
 import { useFiles } from '../queries/useFiles';
+import { DeleteConfirmDialog } from './DeleteConfirmDialog';
 import { FileRow } from './FileRow';
 
 interface BreadcrumbEntry {
@@ -24,8 +26,10 @@ export const FileBrowserWidget = () => {
 
   const [rootName, setRootName] = useState('Root');
   const [stack, setStack] = useState<BreadcrumbEntry[]>([{ id: undefined, name: 'Root' }]);
+  const [pendingDelete, setPendingDelete] = useState<FileEntry | null>(null);
 
   const { data, isLoading, isError } = useFiles(parent_id);
+  const { mutate: deleteFile, isPending: isDeleting } = useDeleteFile(parent_id);
 
   useEffect(() => {
     if (parent_id !== undefined) {
@@ -92,6 +96,11 @@ export const FileBrowserWidget = () => {
     }
   };
 
+  const handleConfirmDelete = () => {
+    if (!pendingDelete) return;
+    deleteFile(pendingDelete.id, { onSuccess: () => setPendingDelete(null) });
+  };
+
   return (
     <div className="flex flex-col gap-4">
       {/* Breadcrumb */}
@@ -134,10 +143,23 @@ export const FileBrowserWidget = () => {
         {data.map((entry, i) => (
           <Fragment key={entry.id}>
             {i > 0 && <div className="border-t border-gray-50 mx-4" />}
-            <FileRow entry={entry} onClick={handleNavigateInto} />
+            <FileRow
+              entry={entry}
+              onClick={handleNavigateInto}
+              onDelete={setPendingDelete}
+            />
           </Fragment>
         ))}
       </div>
+
+      {pendingDelete && (
+        <DeleteConfirmDialog
+          entry={pendingDelete}
+          isPending={isDeleting}
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setPendingDelete(null)}
+        />
+      )}
     </div>
   );
 };
