@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import type { FileEntry } from '../files.types';
@@ -10,6 +11,16 @@ interface DeleteConfirmDialogProps {
 }
 
 export const DeleteConfirmDialog = ({ entry, isPending, onConfirm, onCancel }: DeleteConfirmDialogProps) => {
+  const [deleteHovered, setDeleteHovered] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !isPending) onCancel();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isPending, onCancel]);
+
   return createPortal(
     <div
       style={{
@@ -60,6 +71,8 @@ export const DeleteConfirmDialog = ({ entry, isPending, onConfirm, onCancel }: D
             type="button"
             onClick={onConfirm}
             disabled={isPending}
+            onMouseEnter={() => setDeleteHovered(true)}
+            onMouseLeave={() => setDeleteHovered(false)}
             style={{
               width: '100%',
               padding: '10px 16px',
@@ -71,7 +84,7 @@ export const DeleteConfirmDialog = ({ entry, isPending, onConfirm, onCancel }: D
               border: 'none',
               color: 'white',
               cursor: isPending ? 'not-allowed' : 'pointer',
-              opacity: isPending ? 0.88 : 1,
+              opacity: isPending ? 0.5 : deleteHovered ? 0.88 : 1,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
