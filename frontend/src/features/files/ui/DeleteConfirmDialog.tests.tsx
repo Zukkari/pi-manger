@@ -27,12 +27,12 @@ describe('DeleteConfirmDialog', () => {
     expect(onCancel).toHaveBeenCalled();
   });
 
-  it('calls onConfirm when Confirm is clicked', async () => {
+  it('calls onConfirm when Delete is clicked', async () => {
     const onConfirm = vi.fn();
     render(
       <DeleteConfirmDialog entry={entry} isPending={false} onConfirm={onConfirm} onCancel={vi.fn()} />
     );
-    await userEvent.click(screen.getByRole('button', { name: /confirm/i }));
+    await userEvent.click(screen.getByRole('button', { name: /delete/i }));
     expect(onConfirm).toHaveBeenCalled();
   });
 
@@ -41,6 +41,6 @@ describe('DeleteConfirmDialog', () => {
       <DeleteConfirmDialog entry={entry} isPending={true} onConfirm={vi.fn()} onCancel={vi.fn()} />
     );
     expect(screen.getByRole('button', { name: /cancel/i })).toBeDisabled();
-    expect(screen.getByRole('button', { name: /confirm/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /delete/i })).toBeDisabled();
   });
 });
