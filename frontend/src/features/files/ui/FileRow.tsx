@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import { useEffect, useRef, useState } from 'react';
 
 import type { FileEntry } from '../files.types';
@@ -12,26 +13,44 @@ const formatFileSize = (bytes: number): string => {
   return `${bytes} B`;
 };
 
+const formatDate = (unixSec: number): string =>
+  new Date(unixSec * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
 const FolderIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-    <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"
-      stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
+    <path
+      d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"
+      stroke="var(--paper-accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+    />
   </svg>
 );
 
 const FileIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"
-      stroke="#aeaeb2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    <polyline points="14 2 14 8 20 8" stroke="#aeaeb2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
+    <path
+      d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"
+      stroke="var(--paper-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+    />
+    <polyline points="14 2 14 8 20 8" stroke="var(--paper-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
 const BackIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-    <polyline points="15 18 9 12 15 6" stroke="#8e8e93" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
+    <polyline points="15 18 9 12 15 6" stroke="var(--paper-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
+
+const iconBoxStyle = (isDir: boolean): CSSProperties => ({
+  width: '28px',
+  height: '28px',
+  border: '1px solid var(--paper-border)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  flexShrink: 0,
+  background: isDir ? 'rgba(192,57,43,0.06)' : 'transparent',
+});
 
 type FileRowProps =
   | { isParent: true; onParentClick: () => void; entry?: never; onClick?: never; onDelete?: never }
@@ -59,62 +78,100 @@ export const FileRow = ({ isParent, entry, onClick, onParentClick, onDelete }: F
     };
   }, [menuOpen]);
 
+  const rowStyle: CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    padding: '10px 14px',
+    borderBottom: '1px solid var(--paper-border)',
+    transition: 'background 0.1s',
+  };
+
   if (isParent) {
     return (
       <button
         type="button"
         onClick={onParentClick}
         aria-label="Go to parent directory"
-        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
+        style={{ ...rowStyle, width: '100%', background: 'none', cursor: 'pointer', textAlign: 'left' }}
       >
-        <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
+        <div style={iconBoxStyle(true)}>
           <BackIcon />
         </div>
-        <span className="text-sm text-gray-400">..</span>
+        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--paper-muted)' }}>
+          ..
+        </span>
       </button>
     );
   }
 
   const isDir = entry.is_dir;
 
-  const innerContent = (
-    <>
-      <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-        isDir ? 'bg-blue-50' : 'bg-gray-100'
-      }`}>
-        {isDir ? <FolderIcon /> : <FileIcon />}
+  const nameAndMeta = (
+    <div style={{ flex: 1, minWidth: 0 }}>
+      <div style={{
+        fontFamily: 'var(--font-ui)',
+        fontSize: '14px',
+        fontWeight: 500,
+        color: 'var(--paper-text)',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap',
+      }}>
+        {entry.name}
       </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-gray-900 truncate">{entry.name}</p>
-        <p className="text-xs text-gray-400 mt-0.5">{isDir ? '—' : formatFileSize(entry.size)}</p>
-      </div>
-    </>
+    </div>
   );
 
   return (
-    <div className="w-full flex items-center gap-3 px-4 py-3 transition-colors hover:bg-gray-50">
+    <div style={rowStyle}>
       {isDir ? (
         <button
           type="button"
           onClick={() => onClick(entry)}
-          className="flex items-center gap-3 flex-1 min-w-0 text-left cursor-pointer"
+          style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0, background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: 0 }}
         >
-          {innerContent}
+          <div style={iconBoxStyle(true)}><FolderIcon /></div>
+          {nameAndMeta}
         </button>
       ) : (
-        <div className="flex items-center gap-3 flex-1 min-w-0 cursor-default">
-          {innerContent}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
+          <div style={iconBoxStyle(false)}><FileIcon /></div>
+          {nameAndMeta}
         </div>
       )}
 
-      <div ref={menuRef} className="relative shrink-0">
+      {/* Size + date */}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px', flexShrink: 0 }}>
+        <span style={{ fontFamily: 'var(--font-data)', fontSize: '12px', color: 'var(--paper-muted)', fontWeight: 500 }}>
+          {isDir ? '—' : formatFileSize(entry.size)}
+        </span>
+        <span style={{ fontFamily: 'var(--font-data)', fontSize: '10px', color: 'var(--paper-dim)' }}>
+          {formatDate(entry.modified_at)}
+        </span>
+      </div>
+
+      {/* Action menu */}
+      <div ref={menuRef} style={{ position: 'relative', flexShrink: 0 }}>
         <button
           type="button"
           aria-label="More options"
           aria-haspopup="menu"
           aria-expanded={menuOpen}
           onClick={(e) => { e.stopPropagation(); setMenuOpen(o => !o); }}
-          className="w-7 h-7 flex items-center justify-center rounded-md text-gray-400 hover:text-gray-700 hover:bg-gray-100"
+          style={{
+            width: '28px',
+            height: '28px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            fontFamily: 'var(--font-ui)',
+            fontSize: '16px',
+            color: 'var(--paper-muted)',
+          }}
         >
           ⋯
         </button>
@@ -122,13 +179,32 @@ export const FileRow = ({ isParent, entry, onClick, onParentClick, onDelete }: F
           <div
             role="menu"
             aria-label="File actions"
-            className="absolute right-0 top-full z-10 bg-white shadow-md rounded-lg border border-gray-100 py-1 min-w-[120px]"
+            style={{
+              position: 'absolute',
+              right: 0,
+              top: '100%',
+              zIndex: 10,
+              background: 'var(--paper-surface-hi)',
+              border: '1px solid var(--paper-border-bold)',
+              boxShadow: '3px 3px 0 var(--paper-border-bold)',
+              minWidth: '120px',
+            }}
           >
             <button
               type="button"
               role="menuitem"
               onClick={() => { onDelete(entry); setMenuOpen(false); }}
-              className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-gray-50"
+              style={{
+                width: '100%',
+                textAlign: 'left',
+                padding: '10px 14px',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                fontFamily: 'var(--font-ui)',
+                fontSize: '13px',
+                color: 'var(--paper-danger)',
+              }}
             >
               Delete
             </button>

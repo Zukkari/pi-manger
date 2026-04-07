@@ -83,4 +83,11 @@ describe('FileRow', () => {
     await userEvent.click(screen.getByRole('button', { name: /more options/i }));
     expect(onClick).not.toHaveBeenCalled();
   });
+
+  it('shows the formatted modified date for files', () => {
+    // 1712448000 = Apr 7, 2024 UTC
+    const fileWithDate = { ...file, modified_at: 1712448000 };
+    render(<FileRow entry={fileWithDate} onClick={vi.fn()} onDelete={vi.fn()} />);
+    expect(screen.getByText('Apr 7')).toBeInTheDocument();
+  });
 });
