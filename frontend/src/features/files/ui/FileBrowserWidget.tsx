@@ -66,6 +66,8 @@ export const FileBrowserWidget = () => {
     const name = data && data.length > 0 ? deriveFolderName(data) : undefined;
     if (name) setRootName(name);
     setStack([{ id: undefined, name: name ?? rootName }]);
+  // rootName intentionally omitted: the effect should only run when the URL
+  // param changes or fresh data arrives, not on every rootName state update.
   }, [parent_id, data]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (isLoading) return <FileSkeleton />;
@@ -131,7 +133,7 @@ export const FileBrowserWidget = () => {
         {effectiveStack.map((crumb, i) => {
           const isLast = i === effectiveStack.length - 1;
           return (
-            <span key={i} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <span key={crumb.id ?? `root-${i}`} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
               {i > 0 && (
                 <span style={{ fontFamily: 'var(--font-data)', fontSize: '10px', color: 'var(--paper-dim)' }}>›</span>
               )}

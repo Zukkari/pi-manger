@@ -118,7 +118,7 @@ describe('FileBrowserWidget', () => {
   it('renders without crashing when inside an empty folder on refresh', () => {
     mockUseSearch.mockReturnValue({ parent_id: 1 });
     mockUseNavigate.mockReturnValue(vi.fn());
-    mockUseFiles.mockReturnValue({ data: [], isLoading: false, isError: false } as unknown as unknown as ReturnType<typeof filesHook.useFiles>);
+    mockUseFiles.mockReturnValue({ data: [], isLoading: false, isError: false } as unknown as ReturnType<typeof filesHook.useFiles>);
     mockUseDeleteFile.mockReturnValue({ mutate: vi.fn(), isPending: false } as unknown as ReturnType<typeof deleteFileHook.useDeleteFile>);
 
     render(<FileBrowserWidget />);
