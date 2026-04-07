@@ -18,7 +18,7 @@ const mockData = {
 };
 
 describe('DiskUsageWidget', () => {
-  it('renders a loading spinner and no progress bar while fetching', () => {
+  it('renders a skeleton and no progress bar while fetching', () => {
     mockUseDiskUsage.mockReturnValue({
       data: undefined,
       isLoading: true,
