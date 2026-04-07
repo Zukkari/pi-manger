@@ -25,42 +25,30 @@ describe('DiskUsageBar', () => {
     expect(screen.getByText('50%')).toBeInTheDocument();
   });
 
-  it('renders used, free, and total formatted sizes', () => {
+  it('renders used, free, and total formatted sizes in separate stat cells', () => {
     render(<DiskUsageBar {...baseProps} />);
-    expect(screen.getByText(/50\.0 GB used/)).toBeInTheDocument();
-    expect(screen.getByText(/50\.0 GB free/)).toBeInTheDocument();
-    expect(screen.getByText(/100\.0 GB total/)).toBeInTheDocument();
+    expect(screen.getByTestId('stat-used')).toHaveTextContent('50.0 GB');
+    expect(screen.getByTestId('stat-free')).toHaveTextContent('50.0 GB');
+    expect(screen.getByTestId('stat-total')).toHaveTextContent('100.0 GB');
   });
 
-  it('uses blue bar color when usage is below 70%', () => {
+  it('sets data-state="safe" on the bar when usage is below 70%', () => {
     render(<DiskUsageBar {...baseProps} />);
-    const bar = screen.getByRole('progressbar');
-    expect(bar).toHaveClass('bg-blue-500');
+    expect(screen.getByRole('progressbar')).toHaveAttribute('data-state', 'safe');
   });
 
-  it('uses amber bar color when usage is between 70% and 89%', () => {
-    render(
-      <DiskUsageBar
-        data={{ ...baseProps.data, used_percent: 75 }}
-      />,
-    );
-    const bar = screen.getByRole('progressbar');
-    expect(bar).toHaveClass('bg-amber-400');
+  it('sets data-state="warn" on the bar when usage is between 70% and 89%', () => {
+    render(<DiskUsageBar data={{ ...baseProps.data, used_percent: 75 }} />);
+    expect(screen.getByRole('progressbar')).toHaveAttribute('data-state', 'warn');
   });
 
-  it('uses red bar color when usage is 90% or above', () => {
-    render(
-      <DiskUsageBar
-        data={{ ...baseProps.data, used_percent: 92 }}
-      />,
-    );
-    const bar = screen.getByRole('progressbar');
-    expect(bar).toHaveClass('bg-red-400');
+  it('sets data-state="danger" on the bar when usage is 90% or above', () => {
+    render(<DiskUsageBar data={{ ...baseProps.data, used_percent: 92 }} />);
+    expect(screen.getByRole('progressbar')).toHaveAttribute('data-state', 'danger');
   });
 
   it('sets bar width to the usage percent', () => {
     render(<DiskUsageBar {...baseProps} />);
-    const bar = screen.getByRole('progressbar');
-    expect(bar).toHaveStyle({ width: '50%' });
+    expect(screen.getByRole('progressbar')).toHaveStyle({ width: '50%' });
   });
 });

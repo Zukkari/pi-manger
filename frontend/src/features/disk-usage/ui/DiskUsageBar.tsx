@@ -7,46 +7,117 @@ const formatBytes = (bytes: number): string => {
   return `${mb.toFixed(0)} MB`;
 };
 
-const getBarColor = (percent: number): string => {
-  if (percent >= 90) return 'bg-red-400';
-  if (percent >= 70) return 'bg-amber-400';
-  return 'bg-blue-500';
+type BarState = 'safe' | 'warn' | 'danger';
+
+const getBarState = (percent: number): BarState => {
+  if (percent >= 90) return 'danger';
+  if (percent >= 70) return 'warn';
+  return 'safe';
+};
+
+const BAR_COLORS: Record<BarState, string> = {
+  safe:   'var(--paper-accent)',
+  warn:   'var(--paper-warn)',
+  danger: 'var(--paper-danger)',
 };
 
 export const DiskUsageBar = ({ data }: DiskUsageBarProps) => {
   const { path, total_bytes, used_bytes, free_bytes, used_percent } = data;
-  const barColor = getBarColor(used_percent);
   const roundedPercent = Math.round(used_percent);
+  const barState = getBarState(used_percent);
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 w-full max-w-md">
-      <div className="flex items-center justify-between mb-4">
+    <div style={{
+      background: 'var(--paper-surface)',
+      border: '1px solid var(--paper-border)',
+      boxShadow: '3px 3px 0 var(--paper-border-bold)',
+      padding: '24px',
+      width: '100%',
+    }}>
+      {/* Hero row: percentage + path */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '20px' }}>
         <div>
-          <p className="text-xs font-medium text-gray-400 uppercase tracking-widest mb-0.5">
-            Storage
-          </p>
-          <p className="text-sm text-gray-500 font-mono">{path}</p>
+          <div style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: '88px',
+            lineHeight: 1,
+            letterSpacing: '-0.04em',
+            color: 'var(--paper-text)',
+          }}>
+            {roundedPercent}%
+          </div>
+          <div style={{
+            fontFamily: 'var(--font-data)',
+            fontSize: '11px',
+            color: 'var(--paper-muted)',
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            marginTop: '2px',
+          }}>
+            used
+          </div>
         </div>
-        <span className="text-2xl font-semibold text-gray-800 tabular-nums">
-          {roundedPercent}%
-        </span>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontFamily: 'var(--font-data)', fontSize: '11px', color: 'var(--paper-muted)' }}>
+            {path}
+          </div>
+        </div>
       </div>
 
-      <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden mb-4">
+      {/* Progress bar */}
+      <div style={{ height: '8px', background: 'rgba(0,0,0,0.08)', marginBottom: '16px' }}>
         <div
           role="progressbar"
           aria-valuenow={roundedPercent}
           aria-valuemin={0}
           aria-valuemax={100}
-          className={`h-full rounded-full transition-all duration-700 ${barColor}`}
-          style={{ width: `${used_percent}%` }}
+          data-state={barState}
+          style={{
+            height: '100%',
+            width: `${used_percent}%`,
+            background: BAR_COLORS[barState],
+            transition: 'width 1.2s cubic-bezier(0.22, 1, 0.36, 1)',
+          }}
         />
       </div>
 
-      <div className="flex justify-between text-xs text-gray-400">
-        <span>{formatBytes(used_bytes)} used</span>
-        <span>{formatBytes(free_bytes)} free</span>
-        <span>{formatBytes(total_bytes)} total</span>
+      {/* Stats row */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr 1fr',
+        gap: '1px',
+        background: 'var(--paper-border)',
+        border: '1px solid var(--paper-border)',
+      }}>
+        {([
+          { label: 'Used',  value: formatBytes(used_bytes),  testId: 'stat-used'  },
+          { label: 'Free',  value: formatBytes(free_bytes),  testId: 'stat-free'  },
+          { label: 'Total', value: formatBytes(total_bytes), testId: 'stat-total' },
+        ] as const).map(({ label, value, testId }) => (
+          <div key={label} style={{ background: 'var(--paper-surface)', padding: '12px' }}>
+            <div style={{
+              fontFamily: 'var(--font-data)',
+              fontSize: '8px',
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              color: 'var(--paper-muted)',
+              marginBottom: '3px',
+            }}>
+              {label}
+            </div>
+            <div
+              data-testid={testId}
+              style={{
+                fontFamily: 'var(--font-data)',
+                fontSize: '14px',
+                fontWeight: 500,
+                color: 'var(--paper-text)',
+              }}
+            >
+              {value}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
