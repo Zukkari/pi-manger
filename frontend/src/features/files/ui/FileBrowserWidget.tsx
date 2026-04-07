@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import { Fragment, useEffect, useState } from 'react';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 
@@ -13,11 +14,41 @@ interface BreadcrumbEntry {
 }
 
 const deriveFolderName = (children: FileEntry[]): string | undefined => {
-  if (children.length === 0) {
-    return undefined;
-  }
+  if (children.length === 0) return undefined;
   const parts = children[0].path.split('/').filter(Boolean);
   return parts.length >= 2 ? parts[parts.length - 2] : undefined;
+};
+
+const FileSkeleton = () => (
+  <div
+    role="status"
+    aria-label="Loading files"
+    style={{
+      background: 'var(--paper-surface)',
+      border: '1px solid var(--paper-border)',
+      boxShadow: '3px 3px 0 var(--paper-border-bold)',
+    }}
+  >
+    {[0, 1, 2, 3].map(i => (
+      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', borderBottom: '1px solid var(--paper-border)' }}>
+        <div className="paper-skeleton" style={{ width: '28px', height: '28px', flexShrink: 0 }} />
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <div className="paper-skeleton" style={{ width: '50%', height: '10px' }} />
+          <div className="paper-skeleton" style={{ width: '30%', height: '8px' }} />
+        </div>
+        <div className="paper-skeleton" style={{ width: '48px', height: '28px', flexShrink: 0 }} />
+      </div>
+    ))}
+  </div>
+);
+
+const sectionLabelStyle: CSSProperties = {
+  fontFamily: 'var(--font-display)',
+  fontSize: '11px',
+  letterSpacing: '0.2em',
+  textTransform: 'uppercase',
+  color: 'var(--paper-muted)',
+  marginBottom: '10px',
 };
 
 export const FileBrowserWidget = () => {
@@ -32,27 +63,25 @@ export const FileBrowserWidget = () => {
   const { mutate: deleteFile, isPending: isDeleting } = useDeleteFile(parent_id);
 
   useEffect(() => {
-    if (parent_id !== undefined) {
-      return;
-    }
+    if (parent_id !== undefined) return;
     const name = data && data.length > 0 ? deriveFolderName(data) : undefined;
-    if (name) {
-      setRootName(name);
-    }
+    if (name) setRootName(name);
     setStack([{ id: undefined, name: name ?? rootName }]);
   }, [parent_id, data]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (isLoading) {
-    return (
-      <div role="status" className="flex items-center justify-center py-16">
-        <div className="w-6 h-6 rounded-full border-2 border-gray-300 border-t-blue-500 animate-spin" />
-      </div>
-    );
-  }
+  if (isLoading) return <FileSkeleton />;
 
   if (isError || !data) {
     return (
-      <div className="bg-red-50 border border-red-100 rounded-2xl p-6 text-sm text-red-500">
+      <div style={{
+        background: 'var(--paper-surface)',
+        border: '1px solid var(--paper-border)',
+        boxShadow: '3px 3px 0 var(--paper-border-bold)',
+        padding: '24px',
+        fontFamily: 'var(--font-ui)',
+        fontSize: '13px',
+        color: 'var(--paper-danger)',
+      }}>
         Failed to load files. Is the API running?
       </div>
     );
@@ -60,15 +89,9 @@ export const FileBrowserWidget = () => {
 
   const isInsideFolder = parent_id !== undefined;
 
-  // Derive breadcrumb on refresh (stack still has initial placeholder)
   const effectiveStack: BreadcrumbEntry[] = (() => {
-    if (!isInsideFolder) {
-      return stack;
-    }
-    if (stack.length > 1) {
-      return stack;
-    }
-    // refreshed mid-tree — infer folder name from children
+    if (!isInsideFolder) return stack;
+    if (stack.length > 1) return stack;
     const inferred = deriveFolderName(data);
     return inferred
       ? [{ id: undefined, name: rootName }, { id: parent_id, name: inferred }]
@@ -102,47 +125,78 @@ export const FileBrowserWidget = () => {
   };
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* Breadcrumb */}
-      <nav aria-label="breadcrumb" className="flex items-center gap-1 flex-wrap">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      <div style={sectionLabelStyle}>Files</div>
+
+      <nav aria-label="breadcrumb" style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' as const }}>
         {effectiveStack.map((crumb, i) => {
           const isLast = i === effectiveStack.length - 1;
           return (
-            <span key={i} className="flex items-center gap-1">
-              {i > 0 && <span className="text-gray-300 text-xs">›</span>}
+            <span key={i} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              {i > 0 && (
+                <span style={{ fontFamily: 'var(--font-data)', fontSize: '10px', color: 'var(--paper-dim)' }}>›</span>
+              )}
               {i === 0 && !isLast ? (
                 <Link
                   to="/files"
                   search={{ parent_id: undefined }}
                   onClick={() => setStack([{ id: undefined, name: rootName }])}
-                  className="text-xs font-medium text-blue-500 hover:underline"
+                  style={{ fontFamily: 'var(--font-data)', fontSize: '12px', color: 'var(--paper-accent)', textDecoration: 'none' }}
                 >
                   {crumb.name}
                 </Link>
               ) : (
-                <span className={`text-xs ${isLast ? 'font-semibold text-gray-900' : 'font-medium text-blue-500'}`}>
+                <span style={{
+                  fontFamily: 'var(--font-data)',
+                  fontSize: '12px',
+                  color: isLast ? 'var(--paper-text)' : 'var(--paper-accent)',
+                  fontWeight: isLast ? 500 : 400,
+                }}>
                   {crumb.name}
                 </span>
               )}
             </span>
           );
         })}
+        {effectiveStack.length > 0 && (
+          <span style={{ fontFamily: 'var(--font-data)', fontSize: '10px', color: 'var(--paper-dim)', marginLeft: 'auto' }}>
+            {data.length} {data.length === 1 ? 'item' : 'items'}
+          </span>
+        )}
       </nav>
 
-      {/* File list */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        {isInsideFolder && (
-          <>
-            <FileRow isParent onParentClick={handleNavigateUp} />
-            <div className="border-t border-gray-50" />
-          </>
-        )}
+      <div style={{
+        background: 'var(--paper-surface)',
+        border: '1px solid var(--paper-border)',
+        boxShadow: '3px 3px 0 var(--paper-border-bold)',
+        overflow: 'hidden',
+      }}>
+        {isInsideFolder && <FileRow isParent onParentClick={handleNavigateUp} />}
+
         {data.length === 0 && (
-          <p className="text-sm text-gray-400 text-center py-10">Empty directory</p>
+          <div style={{ padding: '48px 24px', textAlign: 'center' }}>
+            <div style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: '18px',
+              letterSpacing: '0.08em',
+              color: 'var(--paper-muted)',
+              marginBottom: '6px',
+            }}>
+              Empty Directory
+            </div>
+            <div style={{
+              fontFamily: 'var(--font-ui)',
+              fontSize: '13px',
+              color: 'var(--paper-dim)',
+            }}>
+              No files found in this location.
+            </div>
+          </div>
         )}
+
         {data.map((entry, i) => (
           <Fragment key={entry.id}>
-            {i > 0 && <div className="border-t border-gray-50 mx-4" />}
+            {i > 0 && <div style={{ borderTop: '1px solid var(--paper-border)' }} />}
             <FileRow
               entry={entry}
               onClick={handleNavigateInto}

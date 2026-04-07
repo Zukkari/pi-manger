@@ -138,4 +138,15 @@ describe('FileBrowserWidget', () => {
 
     expect(navigate).toHaveBeenCalledWith({ to: '/files', search: { parent_id: undefined } });
   });
+
+  it('renders an empty state message when the directory has no files', () => {
+    mockUseSearch.mockReturnValue({ parent_id: undefined });
+    mockUseNavigate.mockReturnValue(vi.fn());
+    mockUseFiles.mockReturnValue({ data: [], isLoading: false, isError: false } as unknown as ReturnType<typeof filesHook.useFiles>);
+    mockUseDeleteFile.mockReturnValue({ mutate: vi.fn(), isPending: false } as unknown as ReturnType<typeof deleteFileHook.useDeleteFile>);
+
+    render(<FileBrowserWidget />);
+
+    expect(screen.getByText(/empty directory/i)).toBeInTheDocument();
+  });
 });
