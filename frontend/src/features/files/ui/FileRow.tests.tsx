@@ -90,4 +90,15 @@ describe('FileRow', () => {
     render(<FileRow entry={fileWithDate} onClick={vi.fn()} onDelete={vi.fn()} />);
     expect(screen.getByText('Apr 7')).toBeInTheDocument();
   });
+
+  it('applies staggered animation delay based on index prop', () => {
+    const { container } = render(<FileRow entry={file} index={2} onClick={vi.fn()} onDelete={vi.fn()} />);
+    const row = container.firstChild as HTMLElement;
+    expect(row).toHaveStyle({ animationDelay: '100ms' });
+  });
+
+  it('does not render the action menu button for the parent row', () => {
+    render(<FileRow isParent onParentClick={vi.fn()} />);
+    expect(screen.queryByRole('button', { name: /more options/i })).not.toBeInTheDocument();
+  });
 });
