@@ -35,16 +35,12 @@ const FileIcon = () => (
   </svg>
 );
 
-const BackIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
-    <polyline points="15 18 9 12 15 6" stroke="var(--paper-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
 
 const iconBoxStyle = (isDir: boolean): CSSProperties => ({
   width: '28px',
   height: '28px',
   border: '1px solid var(--paper-border)',
+  borderRadius: 0,
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
@@ -53,11 +49,12 @@ const iconBoxStyle = (isDir: boolean): CSSProperties => ({
 });
 
 type FileRowProps =
-  | { isParent: true; onParentClick: () => void; entry?: never; onClick?: never; onDelete?: never }
-  | { isParent?: false; entry: FileEntry; onClick: (entry: FileEntry) => void; onParentClick?: never; onDelete: (entry: FileEntry) => void };
+  | { isParent: true; onParentClick: () => void; entry?: never; onClick?: never; onDelete?: never; index?: number }
+  | { isParent?: false; entry: FileEntry; onClick: (entry: FileEntry) => void; onParentClick?: never; onDelete: (entry: FileEntry) => void; index?: number };
 
-export const FileRow = ({ isParent, entry, onClick, onParentClick, onDelete }: FileRowProps) => {
+export const FileRow = ({ isParent, entry, onClick, onParentClick, onDelete, index }: FileRowProps) => {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [hovered, setHovered] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -83,8 +80,12 @@ export const FileRow = ({ isParent, entry, onClick, onParentClick, onDelete }: F
     alignItems: 'center',
     gap: '12px',
     padding: '10px 14px',
+    minHeight: '44px',
     borderBottom: '1px solid var(--paper-border)',
     transition: 'background 0.1s',
+    background: hovered ? 'rgba(192,57,43,0.04)' : 'transparent',
+    animation: 'paper-slide-in 0.35s cubic-bezier(0.22,1,0.36,1) both',
+    animationDelay: `${(index ?? 0) * 50}ms`,
   };
 
   if (isParent) {
@@ -93,10 +94,12 @@ export const FileRow = ({ isParent, entry, onClick, onParentClick, onDelete }: F
         type="button"
         onClick={onParentClick}
         aria-label="Go to parent directory"
-        style={{ ...rowStyle, width: '100%', background: 'none', cursor: 'pointer', textAlign: 'left' }}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        style={{ ...rowStyle, width: '100%', cursor: 'pointer', textAlign: 'left' }}
       >
         <div style={iconBoxStyle(true)}>
-          <BackIcon />
+          <FolderIcon />
         </div>
         <span style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--paper-muted)' }}>
           ..
@@ -124,7 +127,11 @@ export const FileRow = ({ isParent, entry, onClick, onParentClick, onDelete }: F
   );
 
   return (
-    <div style={rowStyle}>
+    <div
+      style={rowStyle}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
       {isDir ? (
         <button
           type="button"
@@ -171,6 +178,8 @@ export const FileRow = ({ isParent, entry, onClick, onParentClick, onDelete }: F
             fontFamily: 'var(--font-ui)',
             fontSize: '16px',
             color: 'var(--paper-muted)',
+            opacity: hovered ? 1 : 0,
+            transition: 'opacity 0.1s',
           }}
         >
           ⋯
