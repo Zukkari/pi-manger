@@ -20,8 +20,8 @@ describe('NavBar', () => {
 
     render(<NavBar />);
 
-    expect(screen.getByRole('button', { name: /home/i })).toHaveAttribute('data-active', 'true');
-    expect(screen.getByRole('button', { name: /files/i })).not.toHaveAttribute('data-active', 'true');
+    expect(screen.getByRole('button', { name: /home/i })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('button', { name: /files/i })).not.toHaveAttribute('aria-current', 'page');
   });
 
   it('marks Files as active on the /files route', () => {
@@ -30,8 +30,8 @@ describe('NavBar', () => {
 
     render(<NavBar />);
 
-    expect(screen.getByRole('button', { name: /files/i })).toHaveAttribute('data-active', 'true');
-    expect(screen.getByRole('button', { name: /home/i })).not.toHaveAttribute('data-active', 'true');
+    expect(screen.getByRole('button', { name: /files/i })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('button', { name: /home/i })).not.toHaveAttribute('aria-current', 'page');
   });
 
   it('navigates to / when Home is clicked', async () => {
