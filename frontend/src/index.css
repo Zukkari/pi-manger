@@ -66,6 +66,18 @@ body {
   to   { background-position: -200% 0; }
 }
 
+/* ── Breadcrumb ancestor links ───────────────────── */
+.paper-breadcrumb-link {
+  text-decoration: none;
+  color: var(--paper-accent);
+  font-family: var(--font-data);
+  font-size: 12px;
+  cursor: pointer;
+}
+.paper-breadcrumb-link:hover {
+  text-decoration: underline;
+}
+
 .paper-skeleton {
   background: linear-gradient(
     90deg,

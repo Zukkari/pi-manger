@@ -36,7 +36,6 @@ const FileSkeleton = () => (
           <div className="paper-skeleton" style={{ width: '50%', height: '10px' }} />
           <div className="paper-skeleton" style={{ width: '30%', height: '8px' }} />
         </div>
-        <div className="paper-skeleton" style={{ width: '48px', height: '28px', flexShrink: 0 }} />
       </div>
     ))}
   </div>
@@ -141,7 +140,16 @@ export const FileBrowserWidget = () => {
                   to="/files"
                   search={{ parent_id: undefined }}
                   onClick={() => setStack([{ id: undefined, name: rootName }])}
-                  style={{ fontFamily: 'var(--font-data)', fontSize: '12px', color: 'var(--paper-accent)', textDecoration: 'none' }}
+                  className="paper-breadcrumb-link"
+                >
+                  {crumb.name}
+                </Link>
+              ) : i > 0 && !isLast ? (
+                <Link
+                  to="/files"
+                  search={{ parent_id: crumb.id }}
+                  onClick={() => setStack(prev => prev.slice(0, i + 1))}
+                  className="paper-breadcrumb-link"
                 >
                   {crumb.name}
                 </Link>
@@ -149,8 +157,8 @@ export const FileBrowserWidget = () => {
                 <span style={{
                   fontFamily: 'var(--font-data)',
                   fontSize: '12px',
-                  color: isLast ? 'var(--paper-text)' : 'var(--paper-accent)',
-                  fontWeight: isLast ? 500 : 400,
+                  color: 'var(--paper-text)',
+                  fontWeight: 500,
                 }}>
                   {crumb.name}
                 </span>
@@ -181,8 +189,9 @@ export const FileBrowserWidget = () => {
               letterSpacing: '0.08em',
               color: 'var(--paper-muted)',
               marginBottom: '6px',
+              textTransform: 'uppercase' as const,
             }}>
-              Empty Directory
+              EMPTY DIRECTORY
             </div>
             <div style={{
               fontFamily: 'var(--font-ui)',
