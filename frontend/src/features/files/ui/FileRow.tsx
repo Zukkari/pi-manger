@@ -108,8 +108,6 @@ export const FileRow = ({ isParent, entry, onClick, onParentClick, onDelete, ind
     );
   }
 
-  const isDir = entry.is_dir;
-
   const nameAndMeta = (
     <div style={{ flex: 1, minWidth: 0 }}>
       <div style={{
@@ -132,7 +130,7 @@ export const FileRow = ({ isParent, entry, onClick, onParentClick, onDelete, ind
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      {isDir ? (
+      {entry.is_dir ? (
         <button
           type="button"
           onClick={() => onClick(entry)}
@@ -148,17 +146,15 @@ export const FileRow = ({ isParent, entry, onClick, onParentClick, onDelete, ind
         </div>
       )}
 
-      {/* Size + date */}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px', flexShrink: 0 }}>
         <span style={{ fontFamily: 'var(--font-data)', fontSize: '12px', color: 'var(--paper-muted)', fontWeight: 500 }}>
-          {isDir ? '—' : formatFileSize(entry.size)}
+          {entry.is_dir ? '—' : formatFileSize(entry.size)}
         </span>
         <span style={{ fontFamily: 'var(--font-data)', fontSize: '10px', color: 'var(--paper-dim)' }}>
           {formatDate(entry.modified_at)}
         </span>
       </div>
 
-      {/* Action menu */}
       <div ref={menuRef} style={{ position: 'relative', flexShrink: 0 }}>
         <button
           type="button"

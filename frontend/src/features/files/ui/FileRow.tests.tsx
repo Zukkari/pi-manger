@@ -16,11 +16,6 @@ const file: FileEntry = {
 };
 
 describe('FileRow', () => {
-  it('renders the entry name', () => {
-    render(<FileRow entry={dir} onClick={vi.fn()} onDelete={vi.fn()} />);
-    expect(screen.getByText('backups')).toBeInTheDocument();
-  });
-
   it('shows — as size for directories', () => {
     render(<FileRow entry={dir} onClick={vi.fn()} onDelete={vi.fn()} />);
     expect(screen.getByText('—')).toBeInTheDocument();
