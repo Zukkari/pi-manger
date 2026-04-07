@@ -210,6 +210,7 @@ export const FileBrowserWidget = () => {
             {i > 0 && <div style={{ borderTop: '1px solid var(--paper-border)' }} />}
             <FileRow
               entry={entry}
+              index={i}
               onClick={handleNavigateInto}
               onDelete={setPendingDelete}
             />

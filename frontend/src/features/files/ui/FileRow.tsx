@@ -45,7 +45,7 @@ const iconBoxStyle = (isDir: boolean): CSSProperties => ({
   alignItems: 'center',
   justifyContent: 'center',
   flexShrink: 0,
-  background: isDir ? 'rgba(192,57,43,0.06)' : 'transparent',
+  background: isDir ? 'color-mix(in srgb, var(--paper-accent) 6%, transparent)' : 'transparent',
 });
 
 type FileRowProps =
@@ -83,7 +83,7 @@ export const FileRow = ({ isParent, entry, onClick, onParentClick, onDelete, ind
     minHeight: '44px',
     borderBottom: '1px solid var(--paper-border)',
     transition: 'background 0.1s',
-    background: hovered ? 'rgba(192,57,43,0.04)' : 'transparent',
+    background: hovered ? 'color-mix(in srgb, var(--paper-accent) 4%, transparent)' : 'transparent',
     animation: 'paper-slide-in 0.35s cubic-bezier(0.22,1,0.36,1) both',
     animationDelay: `${(index ?? 0) * 50}ms`,
   };

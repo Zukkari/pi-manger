@@ -60,6 +60,10 @@ body {
   to   { opacity: 1; transform: translateX(0); }
 }
 
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 /* ── Skeleton shimmer ────────────────────────────── */
 @keyframes paper-shimmer {
   from { background-position: 200% 0; }
