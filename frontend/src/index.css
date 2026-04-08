@@ -70,6 +70,13 @@ body {
   to   { background-position: -200% 0; }
 }
 
+/* ── File row menu button: always visible on touch ── */
+@media (hover: none) {
+  .paper-row-menu-btn {
+    opacity: 1 !important;
+  }
+}
+
 /* ── Breadcrumb ancestor links ───────────────────── */
 .paper-breadcrumb-link {
   text-decoration: none;

@@ -158,6 +158,7 @@ export const FileRow = ({ isParent, entry, onClick, onParentClick, onDelete, ind
       <div ref={menuRef} style={{ position: 'relative', flexShrink: 0 }}>
         <button
           type="button"
+          className="paper-row-menu-btn"
           aria-label="More options"
           aria-haspopup="menu"
           aria-expanded={menuOpen}
@@ -174,7 +175,7 @@ export const FileRow = ({ isParent, entry, onClick, onParentClick, onDelete, ind
             fontFamily: 'var(--font-ui)',
             fontSize: '16px',
             color: 'var(--paper-muted)',
-            opacity: hovered ? 1 : 0,
+            opacity: hovered ? 1 : 0.25,
             transition: 'opacity 0.1s',
           }}
         >
