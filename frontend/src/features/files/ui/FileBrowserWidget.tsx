@@ -211,6 +211,7 @@ export const FileBrowserWidget = () => {
             <FileRow
               entry={entry}
               index={i}
+              isLast={i === data.length - 1}
               onClick={handleNavigateInto}
               onDelete={setPendingDelete}
             />
