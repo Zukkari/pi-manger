@@ -96,4 +96,17 @@ describe('FileRow', () => {
     render(<FileRow isParent onParentClick={vi.fn()} />);
     expect(screen.queryByRole('button', { name: /more options/i })).not.toBeInTheDocument();
   });
+
+  it('opens menu downward when not the last row', async () => {
+    render(<FileRow entry={file} onClick={vi.fn()} onDelete={vi.fn()} />);
+    await userEvent.click(screen.getByRole('button', { name: /more options/i }));
+    expect(screen.getByRole('menu')).toHaveStyle({ top: '100%' });
+  });
+
+  it('opens menu upward when isLast is true', async () => {
+    render(<FileRow entry={file} isLast onClick={vi.fn()} onDelete={vi.fn()} />);
+    await userEvent.click(screen.getByRole('button', { name: /more options/i }));
+    expect(screen.getByRole('menu')).toHaveStyle({ bottom: '100%' });
+    expect(screen.getByRole('menu')).not.toHaveStyle({ top: '100%' });
+  });
 });

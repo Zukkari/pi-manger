@@ -49,10 +49,10 @@ const iconBoxStyle = (isDir: boolean): CSSProperties => ({
 });
 
 type FileRowProps =
-  | { isParent: true; onParentClick: () => void; entry?: never; onClick?: never; onDelete?: never; index?: number }
-  | { isParent?: false; entry: FileEntry; onClick: (entry: FileEntry) => void; onParentClick?: never; onDelete: (entry: FileEntry) => void; index?: number };
+  | { isParent: true; onParentClick: () => void; entry?: never; onClick?: never; onDelete?: never; index?: number; isLast?: never }
+  | { isParent?: false; entry: FileEntry; onClick: (entry: FileEntry) => void; onParentClick?: never; onDelete: (entry: FileEntry) => void; index?: number; isLast?: boolean };
 
-export const FileRow = ({ isParent, entry, onClick, onParentClick, onDelete, index }: FileRowProps) => {
+export const FileRow = ({ isParent, entry, onClick, onParentClick, onDelete, index, isLast }: FileRowProps) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [hovered, setHovered] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -188,7 +188,8 @@ export const FileRow = ({ isParent, entry, onClick, onParentClick, onDelete, ind
             style={{
               position: 'absolute',
               right: 0,
-              top: '100%',
+              top: isLast ? undefined : '100%',
+              bottom: isLast ? '100%' : undefined,
               zIndex: 10,
               background: 'var(--paper-surface-hi)',
               border: '1px solid var(--paper-border-bold)',
