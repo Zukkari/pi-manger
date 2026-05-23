@@ -1,8 +1,8 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import * as largestFilesHook from '../queries/useLargestFiles';
 import type { TopFilesResponse } from '../largest-files.types';
+import * as largestFilesHook from '../queries/useLargestFiles';
 
 import { LargestFilesWidget } from './LargestFilesWidget';
 
