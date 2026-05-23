@@ -409,3 +409,75 @@ func TestDeleteFile_CascadesChildren(t *testing.T) {
 		t.Errorf("expected child cascaded (ErrNoRows), got %v", err)
 	}
 }
+
+func TestTopChildren_NonExistentParentReturnsEmpty(t *testing.T) {
+	s := openTestStore(t)
+	seedTree(t, s)
+	missing := int64(99999)
+
+	got, err := s.TopChildren(context.Background(), &missing)
+	if err != nil {
+		t.Fatalf("TopChildren: %v", err)
+	}
+	if len(got) != 0 {
+		t.Errorf("expected 0 rows for non-existent parent, got %d", len(got))
+	}
+}
+
+func TestTopChildren_ParentWithNoChildrenReturnsEmpty(t *testing.T) {
+	s := openTestStore(t)
+	ids := seedTree(t, s)
+	emptyID := ids["/data/empty"]
+
+	got, err := s.TopChildren(context.Background(), &emptyID)
+	if err != nil {
+		t.Fatalf("TopChildren: %v", err)
+	}
+	if len(got) != 0 {
+		t.Errorf("expected 0 rows for empty dir, got %d", len(got))
+	}
+}
+
+func TestTopChildren_DeepTreeAggregatesAllDescendants(t *testing.T) {
+	s := openTestStore(t)
+	ctx := context.Background()
+	now := time.Now().Unix()
+
+	// Tree: /root (managed) -> /root/a (dir) -> /root/a/b (dir) -> /root/a/b/c.txt (size 4096)
+	rootID, _ := s.UpsertFile(ctx, UpsertFileParams{Path: "/root", Name: "root", IsDir: 1, ModifiedAt: now, SyncedAt: now})
+	aID, _ := s.UpsertFile(ctx, UpsertFileParams{ParentID: sql.NullInt64{Int64: rootID, Valid: true}, Path: "/root/a", Name: "a", IsDir: 1, ModifiedAt: now, SyncedAt: now})
+	bID, _ := s.UpsertFile(ctx, UpsertFileParams{ParentID: sql.NullInt64{Int64: aID, Valid: true}, Path: "/root/a/b", Name: "b", IsDir: 1, ModifiedAt: now, SyncedAt: now})
+	s.UpsertFile(ctx, UpsertFileParams{ParentID: sql.NullInt64{Int64: bID, Valid: true}, Path: "/root/a/b/c.txt", Name: "c.txt", Size: 4096, ModifiedAt: now, SyncedAt: now})
+
+	got, err := s.TopChildren(ctx, nil)
+	if err != nil {
+		t.Fatalf("TopChildren: %v", err)
+	}
+	if len(got) != 1 {
+		t.Fatalf("expected 1 root child, got %d", len(got))
+	}
+	if got[0].Name != "a" || got[0].TotalBytes != 4096 {
+		t.Errorf("got %+v, want name=a total=4096", got[0])
+	}
+}
+
+func TestTopChildren_TiesBrokenByNameAsc(t *testing.T) {
+	s := openTestStore(t)
+	ctx := context.Background()
+	now := time.Now().Unix()
+
+	rootID, _ := s.UpsertFile(ctx, UpsertFileParams{Path: "/root", Name: "root", IsDir: 1, ModifiedAt: now, SyncedAt: now})
+	s.UpsertFile(ctx, UpsertFileParams{ParentID: sql.NullInt64{Int64: rootID, Valid: true}, Path: "/root/zebra.txt", Name: "zebra.txt", Size: 100, ModifiedAt: now, SyncedAt: now})
+	s.UpsertFile(ctx, UpsertFileParams{ParentID: sql.NullInt64{Int64: rootID, Valid: true}, Path: "/root/apple.txt", Name: "apple.txt", Size: 100, ModifiedAt: now, SyncedAt: now})
+
+	got, err := s.TopChildren(ctx, nil)
+	if err != nil {
+		t.Fatalf("TopChildren: %v", err)
+	}
+	if len(got) != 2 {
+		t.Fatalf("expected 2 rows, got %d (%v)", len(got), got)
+	}
+	if got[0].Name != "apple.txt" || got[1].Name != "zebra.txt" {
+		t.Errorf("expected alphabetical tiebreak, got [%s, %s]", got[0].Name, got[1].Name)
+	}
+}
