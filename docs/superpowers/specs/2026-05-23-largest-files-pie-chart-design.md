@@ -215,10 +215,12 @@ Mirroring `DiskUsageWidget.tests.tsx`:
 Add to `frontend/package.json`:
 
 ```
-"recharts": "^2.15.0"
+"recharts": "^3.8.1"
 ```
 
-Bundle impact is approximately 200 KB gzipped, served by Nginx as a static asset alongside the existing React + TanStack bundle. Acceptable for a self-hosted Pi dashboard.
+Version 3.x is chosen over 2.x because the project runs React 19 — Recharts 2.x has peer-dependency friction with React 19, while 3.x ships with first-class React 19 support. The `PieChart` / `Pie` / `Cell` / `Tooltip` API used by this widget is unchanged between the two major versions.
+
+Bundle impact is roughly 180 KB gzipped, served by Nginx as a static asset alongside the existing React + TanStack bundle. Acceptable for a self-hosted Pi dashboard.
 
 ## Testing strategy
 
