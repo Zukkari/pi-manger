@@ -44,10 +44,9 @@ type topFilesResponse struct {
 }
 
 func (h *TopFilesHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
 	if r.Method != http.MethodGet {
 		w.Header().Set("Allow", http.MethodGet)
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		if err := json.NewEncoder(w).Encode(errorResponse{Error: "method not allowed"}); err != nil {
 			log.Printf("top_files: encode 405: %v", err)
@@ -63,6 +62,7 @@ func (h *TopFilesHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if raw := q.Get("parent_id"); raw != "" {
 		id, err := strconv.ParseInt(raw, 10, 64)
 		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusBadRequest)
 			if err := json.NewEncoder(w).Encode(errorResponse{Error: "invalid parent_id"}); err != nil {
 				log.Printf("top_files: encode 400: %v", err)
@@ -73,6 +73,7 @@ func (h *TopFilesHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// a directory (400), and include its path in the response.
 		file, err := h.store.GetFile(r.Context(), id)
 		if errors.Is(err, sql.ErrNoRows) {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusNotFound)
 			if err := json.NewEncoder(w).Encode(errorResponse{Error: "not found"}); err != nil {
 				log.Printf("top_files: encode 404: %v", err)
@@ -80,6 +81,7 @@ func (h *TopFilesHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			if err := json.NewEncoder(w).Encode(errorResponse{Error: err.Error()}); err != nil {
 				log.Printf("top_files: encode 500: %v", err)
@@ -87,6 +89,7 @@ func (h *TopFilesHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if file.IsDir == 0 {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusBadRequest)
 			if err := json.NewEncoder(w).Encode(errorResponse{Error: "parent_id is not a directory"}); err != nil {
 				log.Printf("top_files: encode 400: %v", err)
@@ -102,6 +105,7 @@ func (h *TopFilesHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if raw := q.Get("limit"); raw != "" {
 		n, err := strconv.Atoi(raw)
 		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusBadRequest)
 			if err := json.NewEncoder(w).Encode(errorResponse{Error: "invalid limit"}); err != nil {
 				log.Printf("top_files: encode 400: %v", err)
@@ -113,6 +117,7 @@ func (h *TopFilesHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	children, err := h.store.TopChildren(r.Context(), parentID)
 	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
 		if err := json.NewEncoder(w).Encode(errorResponse{Error: err.Error()}); err != nil {
 			log.Printf("top_files: encode 500: %v", err)
@@ -140,6 +145,7 @@ func (h *TopFilesHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	resp.TotalBytes += resp.OtherBytes
 
+	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
 		log.Printf("top_files: encode response: %v", err)
 	}

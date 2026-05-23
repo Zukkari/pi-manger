@@ -174,7 +174,9 @@ func TestTopFilesHandler_LimitClampsHighAndLow(t *testing.T) {
 		var body struct {
 			Entries []struct{} `json:"entries"`
 		}
-		json.Unmarshal(w.Body.Bytes(), &body)
+		if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
+			t.Fatalf("limit=%s: invalid JSON: %v", c.limit, err)
+		}
 		if len(body.Entries) != c.want {
 			t.Errorf("limit=%s: expected %d entries, got %d", c.limit, c.want, len(body.Entries))
 		}
