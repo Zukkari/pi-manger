@@ -7,6 +7,7 @@ import { LargestFilesBreadcrumb, type BreadcrumbCrumb } from './LargestFilesBrea
 import { LargestFilesPie } from './LargestFilesPie';
 
 const CONTAINER_STYLE: React.CSSProperties = {
+  position: 'relative',
   background: 'var(--paper-surface)',
   border: '1px solid var(--paper-border)',
   boxShadow: '3px 3px 0 var(--paper-border-bold)',
@@ -70,14 +71,19 @@ export const LargestFilesWidget = () => {
         />
       )}
 
-      {/* Hidden, keyboard-accessible click targets that mirror each slice.
-          Recharts SVG slices are not reliably clickable from jsdom, and these
-          buttons also serve as accessible alternatives for keyboard users. */}
-      <div style={{ position: 'absolute', width: 1, height: 1, padding: 0, margin: -1, overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap', border: 0 }}>
+      {/* Hidden test-only click targets that mirror each slice. Recharts SVG
+          slices are not reliably clickable from jsdom. Hidden from a11y tree
+          (aria-hidden) and from keyboard navigation (tabIndex -1) — the
+          accessible click surface is the Recharts pie itself. */}
+      <div
+        aria-hidden="true"
+        style={{ position: 'absolute', width: 1, height: 1, padding: 0, margin: -1, overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap', border: 0 }}
+      >
         {data.entries.map(entry => (
           <button
             key={entry.id}
             type="button"
+            tabIndex={-1}
             data-testid={`largest-files-slice-${entry.id}`}
             onClick={() => handleEntryClick(entry)}
           >
@@ -85,7 +91,7 @@ export const LargestFilesWidget = () => {
           </button>
         ))}
         {data.other_bytes > 0 && (
-          <button type="button" data-testid="largest-files-slice-other" onClick={() => undefined}>
+          <button type="button" tabIndex={-1} data-testid="largest-files-slice-other" onClick={() => undefined}>
             Other
           </button>
         )}
