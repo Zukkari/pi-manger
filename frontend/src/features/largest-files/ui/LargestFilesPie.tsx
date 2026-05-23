@@ -17,8 +17,8 @@ interface SliceDatum {
   entry: TopFilesEntry | null;
 }
 
-const SLICE_COLORS = ['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899'];
-const OTHER_COLOR = '#94a3b8';
+const SLICE_COLORS = ['#c0392b', '#d97706', '#16a34a', '#6b5e45', '#a0522d', '#8b7355'];
+const OTHER_COLOR = '#c8b898';
 
 const formatBytes = (bytes: number): string => {
   if (bytes < 1024) return `${bytes} B`;
@@ -71,6 +71,18 @@ export const LargestFilesPie = ({ entries, otherBytes, totalBytes, onEntryClick 
             ))}
           </Pie>
           <Tooltip
+            contentStyle={{
+              background: 'var(--paper-surface)',
+              border: '1px solid rgba(0,0,0,0.20)',
+              boxShadow: '3px 3px 0 rgba(0,0,0,0.20)',
+              borderRadius: 0,
+              fontFamily: 'var(--font-ui)',
+              fontSize: 13,
+              color: 'var(--paper-text)',
+              padding: '8px 12px',
+            }}
+            itemStyle={{ color: 'var(--paper-text)' }}
+            labelStyle={{ color: 'var(--paper-muted)', fontFamily: 'var(--font-data)', fontSize: 11 }}
             formatter={(value: ValueType | undefined, name: NameType | undefined) => {
               const bytes = typeof value === 'number' ? value : 0;
               return [

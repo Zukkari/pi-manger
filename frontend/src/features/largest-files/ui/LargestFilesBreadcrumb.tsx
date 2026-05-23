@@ -13,7 +13,7 @@ const crumbButtonStyle: React.CSSProperties = {
   border: 'none',
   padding: 0,
   font: 'inherit',
-  color: 'var(--paper-link, #3b82f6)',
+  color: 'var(--paper-accent)',
   cursor: 'pointer',
   textDecoration: 'underline',
 };
