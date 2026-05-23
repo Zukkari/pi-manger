@@ -83,7 +83,7 @@ describe('FileRow', () => {
     // 1712448000 = Apr 7, 2024 UTC
     const fileWithDate = { ...file, modified_at: 1712448000 };
     render(<FileRow entry={fileWithDate} onClick={vi.fn()} onDelete={vi.fn()} />);
-    expect(screen.getByText('Apr 7')).toBeInTheDocument();
+    expect(screen.getByText('Apr 7, 2024')).toBeInTheDocument();
   });
 
   it('applies staggered animation delay based on index prop', () => {

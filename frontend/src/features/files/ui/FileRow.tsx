@@ -14,7 +14,7 @@ const formatFileSize = (bytes: number): string => {
 };
 
 const formatDate = (unixSec: number): string =>
-  new Date(unixSec * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  new Date(unixSec * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
 const FolderIcon = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
