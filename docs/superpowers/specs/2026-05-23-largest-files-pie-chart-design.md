@@ -67,7 +67,7 @@ Total size for a directory is computed at query time as the sum of `size` across
 
 ## SQL
 
-Two named queries in `query.sql`:
+The scanner inserts the managed dir itself as the only row with `parent_id IS NULL`. From the user's perspective "root" means **the children of that managed-dir row** — same convention already used by `store.ListChildren`. Two named queries are added because SQLite cannot bind `NULL` to `parent_id = ?`:
 
 ```sql
 -- name: TopChildren :many
@@ -86,10 +86,12 @@ GROUP BY f.id, f.name, f.is_dir
 ORDER BY total_bytes DESC, f.name ASC;
 
 -- name: TopRootChildren :many
--- Identical body, with the seed predicate `WHERE parent_id IS NULL`.
+-- Identical body to TopChildren but seeded against the children of the
+-- managed-dir row. The seed predicate becomes:
+--   WHERE parent_id = (SELECT id FROM files WHERE parent_id IS NULL LIMIT 1)
 ```
 
-Two queries are required because SQLite cannot bind `NULL` to `parent_id = ?`. The `ORDER BY name ASC` secondary sort gives deterministic ordering when sizes are equal (matters for tests).
+The `ORDER BY name ASC` secondary sort gives deterministic ordering when sizes are equal (matters for tests).
 
 The SQL returns every direct child of the parent (no `LIMIT`), already sorted. The "top N" + "other" split is computed in Go after the query returns: take the first N rows as `entries`, sum the remaining rows' `total_bytes` into `other_bytes`. Doing the split in Go keeps the SQL simple; the result set per parent is bounded by the number of direct children, which is small for any realistic Pi-managed directory.
 
@@ -126,14 +128,14 @@ For the root call, `parent_id` and `parent_path` are `null`. `total_bytes` equal
 
 ### Error responses
 
-Following the project's REST convention (RFC 7807 Problem Details, JSON objects, not strings):
+This handler matches the existing project convention used by `disk.go`, `files.go`, and `files_delete.go`: errors are serialised as a flat `{"error": "<message>"}` JSON object via the package-local `errorResponse` type. This intentionally diverges from the user-level CLAUDE.md preference for RFC 7807 — consistency with the existing handlers takes precedence so all four endpoints behave identically. A separate refactor can lift all handlers to Problem Details if desired later.
 
 | Condition | Status | Body |
 |-----------|--------|------|
-| `parent_id` not parseable as integer | 400 | Problem Details |
-| `limit` not parseable as integer | 400 | Problem Details |
-| `parent_id` refers to a row where `is_dir = 0` | 400 | Problem Details |
-| `parent_id` refers to no row | 404 | Problem Details |
+| `parent_id` not parseable as integer | 400 | `{"error": "invalid parent_id"}` |
+| `limit` not parseable as integer | 400 | `{"error": "invalid limit"}` |
+| `parent_id` refers to a row where `is_dir = 0` | 400 | `{"error": "parent_id is not a directory"}` |
+| `parent_id` refers to no row | 404 | `{"error": "not found"}` |
 | Empty result (folder has no children) | 200 | `entries: []`, `other_bytes: 0`, `total_bytes: 0` |
 
 `limit` out of `[1, 20]` is clamped silently and returns 200.
