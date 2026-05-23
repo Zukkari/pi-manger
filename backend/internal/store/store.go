@@ -105,6 +105,60 @@ FROM files WHERE parent_id = ? ORDER BY is_dir DESC, name ASC`
 	return files, rows.Err()
 }
 
+// TopChild is a direct child of a parent annotated with the total bytes of
+// every file descended from it (the child's own size if it is a file,
+// or the recursive sum of all descendant file sizes if it is a directory).
+type TopChild struct {
+	ID         int64
+	Name       string
+	IsDir      bool
+	TotalBytes int64
+}
+
+// TopChildren returns the direct children of the given parent annotated with
+// their total descendant file size. Pass nil for parentID to list the children
+// of the managed-dir row (the user-facing "root"). Results are ordered by
+// total_bytes DESC, then name ASC.
+func (s *Store) TopChildren(ctx context.Context, parentID *int64) ([]TopChild, error) {
+	if parentID == nil {
+		rows, err := s.queries.TopRootChildren(ctx)
+		if err != nil {
+			return nil, err
+		}
+		out := make([]TopChild, 0, len(rows))
+		for _, r := range rows {
+			out = append(out, TopChild{ID: r.ID, Name: r.Name, IsDir: r.IsDir != 0, TotalBytes: toInt64(r.TotalBytes)})
+		}
+		return out, nil
+	}
+	rows, err := s.queries.TopChildren(ctx, sql.NullInt64{Int64: *parentID, Valid: true})
+	if err != nil {
+		return nil, err
+	}
+	out := make([]TopChild, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, TopChild{ID: r.ID, Name: r.Name, IsDir: r.IsDir != 0, TotalBytes: toInt64(r.TotalBytes)})
+	}
+	return out, nil
+}
+
+// toInt64 coerces the interface{} returned by sqlc for COALESCE(SUM(...)) into
+// an int64. SQLite can return int64 or []byte depending on the driver.
+func toInt64(v interface{}) int64 {
+	switch x := v.(type) {
+	case int64:
+		return x
+	case float64:
+		return int64(x)
+	case []byte:
+		var n int64
+		fmt.Sscan(string(x), &n)
+		return n
+	default:
+		return 0
+	}
+}
+
 // GetFile returns the file record with the given id.
 // Returns sql.ErrNoRows if no record exists.
 func (s *Store) GetFile(ctx context.Context, id int64) (File, error) {

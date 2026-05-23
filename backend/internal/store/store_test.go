@@ -280,6 +280,107 @@ func TestDeleteFile_RemovesRecord(t *testing.T) {
 	}
 }
 
+// seedTree inserts a small directory tree used by the TopChildren tests:
+//
+//	/data                (managed root)              size 0   dir
+//	├── /data/movies     (8 GiB total via children)  dir
+//	│   ├── /data/movies/a.mkv  size 5 GiB
+//	│   └── /data/movies/b.mkv  size 3 GiB
+//	├── /data/photos     (1 GiB)                     dir
+//	│   └── /data/photos/p.jpg  size 1 GiB
+//	├── /data/notes.txt  size 1024
+//	└── /data/empty      (0 bytes)                   dir
+//
+// It returns the file ids keyed by their absolute path.
+func seedTree(t *testing.T, s *Store) map[string]int64 {
+	t.Helper()
+	ctx := context.Background()
+	now := time.Now().Unix()
+	ids := make(map[string]int64)
+
+	upsert := func(parent string, path, name string, size int64, isDir int64) int64 {
+		t.Helper()
+		var pid sql.NullInt64
+		if parent != "" {
+			pid = sql.NullInt64{Int64: ids[parent], Valid: true}
+		}
+		id, err := s.UpsertFile(ctx, UpsertFileParams{
+			ParentID: pid, Path: path, Name: name, Size: size, IsDir: isDir,
+			ModifiedAt: now, SyncedAt: now,
+		})
+		if err != nil {
+			t.Fatalf("upsert %s: %v", path, err)
+		}
+		ids[path] = id
+		return id
+	}
+
+	upsert("", "/data", "data", 0, 1)
+	upsert("/data", "/data/movies", "movies", 0, 1)
+	upsert("/data/movies", "/data/movies/a.mkv", "a.mkv", 5*1024*1024*1024, 0)
+	upsert("/data/movies", "/data/movies/b.mkv", "b.mkv", 3*1024*1024*1024, 0)
+	upsert("/data", "/data/photos", "photos", 0, 1)
+	upsert("/data/photos", "/data/photos/p.jpg", "p.jpg", 1*1024*1024*1024, 0)
+	upsert("/data", "/data/notes.txt", "notes.txt", 1024, 0)
+	upsert("/data", "/data/empty", "empty", 0, 1)
+	return ids
+}
+
+func TestTopChildren_RootReturnsChildrenOfManagedDir(t *testing.T) {
+	s := openTestStore(t)
+	ids := seedTree(t, s)
+
+	got, err := s.TopChildren(context.Background(), nil)
+	if err != nil {
+		t.Fatalf("TopChildren: %v", err)
+	}
+
+	// Expect 4 direct children of /data ordered by total_bytes DESC then name ASC.
+	if len(got) != 4 {
+		t.Fatalf("expected 4 rows, got %d (%v)", len(got), got)
+	}
+
+	type want struct {
+		id    int64
+		name  string
+		isDir bool
+		total int64
+	}
+	wants := []want{
+		{ids["/data/movies"], "movies", true, 8 * 1024 * 1024 * 1024},
+		{ids["/data/photos"], "photos", true, 1 * 1024 * 1024 * 1024},
+		{ids["/data/notes.txt"], "notes.txt", false, 1024},
+		{ids["/data/empty"], "empty", true, 0},
+	}
+	for i, w := range wants {
+		if got[i].ID != w.id || got[i].Name != w.name || got[i].IsDir != w.isDir || got[i].TotalBytes != w.total {
+			t.Errorf("row %d: got %+v, want %+v", i, got[i], w)
+		}
+	}
+}
+
+func TestTopChildren_NonRootReturnsChildrenOfParent(t *testing.T) {
+	s := openTestStore(t)
+	ids := seedTree(t, s)
+	moviesID := ids["/data/movies"]
+
+	got, err := s.TopChildren(context.Background(), &moviesID)
+	if err != nil {
+		t.Fatalf("TopChildren: %v", err)
+	}
+
+	// Expect 2 children: a.mkv (5 GiB), b.mkv (3 GiB) — sorted by size DESC.
+	if len(got) != 2 {
+		t.Fatalf("expected 2 rows, got %d (%v)", len(got), got)
+	}
+	if got[0].Name != "a.mkv" || got[0].TotalBytes != 5*1024*1024*1024 {
+		t.Errorf("row 0: got %+v", got[0])
+	}
+	if got[1].Name != "b.mkv" || got[1].TotalBytes != 3*1024*1024*1024 {
+		t.Errorf("row 1: got %+v", got[1])
+	}
+}
+
 func TestDeleteFile_CascadesChildren(t *testing.T) {
 	s := openTestStore(t)
 	ctx := context.Background()
