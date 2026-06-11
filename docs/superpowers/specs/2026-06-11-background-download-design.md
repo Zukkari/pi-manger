@@ -19,6 +19,7 @@ scanner picks the finished file into the `files` table on its next pass (within
 | Destination | Subfolder under `MANAGED_DIR`; user supplies a relative path; created if missing; traversal rejected |
 | URL validation | Minimal — require `http`/`https` scheme only; no SSRF/private-IP blocking, no size cap |
 | Filename | User may override; otherwise derive (URL last segment → `Content-Disposition` → `download`); auto-suffix collisions ` (1)`, ` (2)`… (never overwrite) |
+| Failed download | Partial `.part` file is left on disk (never auto-deleted); it shows up in the file list so the user removes it with the existing delete action |
 | UI trigger | Floating `+` button opening a full-screen form sheet (paper theme) |
 | Folder picker | Drill-down tree built on existing `/api/files` tree; inline create-subfolder |
 | API path | `/api/downloads` (plural noun) |
@@ -57,8 +58,10 @@ Download goroutine:
    that updates `BytesDownloaded`, writing to `<name>.part`.
 6. On success: `rename` `.part` → final name, status `completed`, set
    `FinishedAt`.
-7. On any error: remove the `.part` file, status `failed`, store the error
-   message, set `FinishedAt`.
+7. On any error: **leave the partial `.part` file in place**, status `failed`,
+   store the error message, set `FinishedAt`. The scanner picks the `.part`
+   file into the file list so the user can remove it via the existing delete
+   action — the server never auto-deletes partial downloads.
 
 A context timeout guards stuck connections. No size cap.
 
@@ -119,7 +122,7 @@ These are added to the dashboard page alongside the existing widgets.
   - collision suffixing;
   - traversal rejection (`dir` escaping `MANAGED_DIR`);
   - non-http(s) scheme rejection;
-  - failure mid-stream leaves no `.part` file and reaches `failed`;
+  - failure mid-stream leaves the `.part` file in place and reaches `failed`;
   - `BytesDownloaded` progress counting.
 - Handler tests: 202 on valid POST, 400 on malformed body, 422 on invalid
   url/dir, list endpoint returns jobs.
