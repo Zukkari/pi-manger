@@ -1,6 +1,6 @@
+import { formatBytes } from '@/shared/lib/formatBytes';
 import { GlassCard } from '@/shared/ui/GlassCard';
 import { WidgetError } from '@/shared/ui/WidgetError';
-import { formatBytes } from '@/shared/lib/formatBytes';
 
 import { useFileTypes } from '../queries/useFileTypes';
 

@@ -24,6 +24,7 @@ const stubMatchMedia = () => {
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components -- test wrapper component
 const Wrapper = ({ children }: { children: ReactNode }) => (
   <ThemeProvider>{children}</ThemeProvider>
 );

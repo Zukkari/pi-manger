@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { fetchFileTypes } from '../api/fileTypes';
+
 import { QueryKeys } from './queryKeys';
 
 export const useFileTypes = () =>

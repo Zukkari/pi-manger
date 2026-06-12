@@ -1,9 +1,9 @@
 import { FilePlus2, FileX2, TrendingDown, TrendingUp } from 'lucide-react';
 
-import { GlassCard } from '@/shared/ui/GlassCard';
-import { WidgetError } from '@/shared/ui/WidgetError';
 import { formatBytes } from '@/shared/lib/formatBytes';
 import { formatRelativeTime } from '@/shared/lib/formatRelativeTime';
+import { GlassCard } from '@/shared/ui/GlassCard';
+import { WidgetError } from '@/shared/ui/WidgetError';
 
 import type { ChangeType, FileChange } from '../activity.types';
 import { useChanges } from '../queries/useChanges';
@@ -15,6 +15,8 @@ const TYPE_STYLE: Record<ChangeType, { icon: typeof FilePlus2; className: string
   shrunk:  { icon: TrendingDown, className: 'text-muted' },
 };
 
+const FALLBACK_STYLE = { icon: FilePlus2, className: 'text-muted' };
+
 const ActivitySkeleton = () => (
   <GlassCard role="status" aria-label="Loading recent changes" className="p-6">
     <div className="skeleton w-32 h-3 mb-4" />
@@ -25,7 +27,7 @@ const ActivitySkeleton = () => (
 );
 
 const ChangeRow = ({ change }: { change: FileChange }) => {
-  const { icon: Icon, className } = TYPE_STYLE[change.change_type];
+  const { icon: Icon, className } = TYPE_STYLE[change.change_type] ?? FALLBACK_STYLE;
   return (
     <div data-change-type={change.change_type} className="flex items-center gap-2.5 py-2 min-h-11">
       <Icon size={14} className={`${className} shrink-0`} aria-hidden />

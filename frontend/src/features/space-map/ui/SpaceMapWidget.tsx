@@ -7,8 +7,8 @@ import { useThemeTokens } from '@/shared/theme/useThemeTokens';
 import { GlassCard } from '@/shared/ui/GlassCard';
 import { WidgetError } from '@/shared/ui/WidgetError';
 
-import type { UsageChild } from '../space-map.types';
 import { useDirectoryUsage } from '../queries/useDirectoryUsage';
+import type { UsageChild } from '../space-map.types';
 
 interface Crumb {
   id: number | undefined;
@@ -59,7 +59,19 @@ export const SpaceMapWidget = () => {
     </div>
   );
 
-  if (isLoading) return <SpaceMapSkeleton />;
+  if (isLoading) {
+    // When drilling, keep the breadcrumb visible so the user can navigate away
+    // while the next level loads — mirrors the same pattern in the error branch.
+    if (stack.length > 1) {
+      return (
+        <GlassCard className="p-6">
+          {header}
+          <div role="status" aria-label="Loading space map"><div className="skeleton h-44 mt-3" /></div>
+        </GlassCard>
+      );
+    }
+    return <SpaceMapSkeleton />;
+  }
 
   if (isError || !data) {
     // When drilling into a subdirectory the user needs the breadcrumb to escape
