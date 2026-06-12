@@ -18,7 +18,7 @@ describe('FolderPicker', () => {
       data: [{ id: 1, name: 'downloads' }],
       isLoading: false,
       isError: false,
-    } as ReturnType<typeof foldersHook.useFolders>);
+    } as unknown as ReturnType<typeof foldersHook.useFolders>);
 
     const onSelect = vi.fn();
     render(<FolderPicker onSelect={onSelect} onClose={vi.fn()} />);
@@ -32,7 +32,7 @@ describe('FolderPicker', () => {
       data: [{ id: 1, name: 'downloads' }],
       isLoading: false,
       isError: false,
-    } as ReturnType<typeof foldersHook.useFolders>);
+    } as unknown as ReturnType<typeof foldersHook.useFolders>);
 
     const onSelect = vi.fn();
     render(<FolderPicker onSelect={onSelect} onClose={vi.fn()} />);
@@ -47,7 +47,7 @@ describe('FolderPicker', () => {
       data: [],
       isLoading: false,
       isError: false,
-    } as ReturnType<typeof foldersHook.useFolders>);
+    } as unknown as ReturnType<typeof foldersHook.useFolders>);
 
     const onSelect = vi.fn();
     render(<FolderPicker onSelect={onSelect} onClose={vi.fn()} />);
