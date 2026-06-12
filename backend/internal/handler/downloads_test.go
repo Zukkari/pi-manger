@@ -46,9 +46,27 @@ func TestDownloadsPostReturns202(t *testing.T) {
 		t.Errorf("forwarded args wrong: %q %q %q", fake.gotURL, fake.gotDir, fake.gotName)
 	}
 	var got map[string]any
-	json.NewDecoder(rec.Body).Decode(&got)
+	if err := json.NewDecoder(rec.Body).Decode(&got); err != nil {
+		t.Fatalf("decode body: %v", err)
+	}
 	if got["id"] != "abc" || got["status"] != "queued" {
 		t.Errorf("body = %v", got)
+	}
+}
+
+func TestDownloadsRejectsOtherMethods(t *testing.T) {
+	h := NewDownloadsHandler(&fakeDownloader{})
+	req := httptest.NewRequest(http.MethodDelete, "/api/downloads", nil)
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusMethodNotAllowed {
+		t.Fatalf("status = %d, want 405", rec.Code)
+	}
+	if allow := rec.Header().Get("Allow"); allow != "GET, POST" {
+		t.Errorf("Allow = %q, want \"GET, POST\"", allow)
+	}
+	if ct := rec.Header().Get("Content-Type"); ct != "application/json" {
+		t.Errorf("Content-Type = %q, want application/json", ct)
 	}
 }
 
