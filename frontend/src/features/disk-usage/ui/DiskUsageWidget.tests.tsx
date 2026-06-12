@@ -23,7 +23,8 @@ describe('DiskUsageWidget', () => {
       data: undefined,
       isLoading: true,
       isError: false,
-    } as ReturnType<typeof diskUsageHook.useDiskUsage>);
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof diskUsageHook.useDiskUsage>);
 
     render(<DiskUsageWidget />);
 
@@ -36,7 +37,8 @@ describe('DiskUsageWidget', () => {
       data: undefined,
       isLoading: false,
       isError: true,
-    } as ReturnType<typeof diskUsageHook.useDiskUsage>);
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof diskUsageHook.useDiskUsage>);
 
     render(<DiskUsageWidget />);
 
@@ -48,7 +50,8 @@ describe('DiskUsageWidget', () => {
       data: mockData,
       isLoading: false,
       isError: false,
-    } as ReturnType<typeof diskUsageHook.useDiskUsage>);
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof diskUsageHook.useDiskUsage>);
 
     render(<DiskUsageWidget />);
 
