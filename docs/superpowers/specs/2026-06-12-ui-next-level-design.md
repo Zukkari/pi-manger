@@ -21,6 +21,10 @@ and file-browser UX upgrades. Backend (Go + SQLite) work is in scope.
   `currentColor` so they theme automatically.
 - **Widgets chosen:** folder treemap, file-type breakdown, sync activity feed.
   (Disk-usage-over-time history chart was considered and rejected.)
+- **Treemap replaces the largest-files pie:** both answer "what's eating the disk?"
+  with the same drill-down + breadcrumb model, and the treemap answers it better
+  (hierarchy, directories and files together, readable with many similar sizes). The
+  `largest-files` feature module is removed.
 - **UX chosen:** search & filter, sortable columns, multi-select + bulk delete,
   mobile/touch polish. (Keyboard navigation was considered and rejected.)
 - **API versioning:** stay unversioned (`/api/*`) for consistency with existing
@@ -125,14 +129,17 @@ exports, widgets own their loading/error states, pages compose only).
   keyframes, reduced-motion guard.
 - New deps: `@fontsource/iosevka-aile`, `@fontsource/iosevka`, `lucide-react`.
 - All existing components restyled: NavBar, PageHeading, DiskUsageWidget/Bar,
-  LargestFilesWidget/Pie/Breadcrumb, FileBrowserWidget, FileRow, DeleteConfirmDialog,
-  DownloadsList, AddDownloadButton/Sheet, FolderPicker, layouts.
+  FileBrowserWidget, FileRow, DeleteConfirmDialog, DownloadsList,
+  AddDownloadButton/Sheet, FolderPicker, layouts. (LargestFiles* components are not
+  restyled — the feature is removed, see below.)
 
 ### New widget features
 
 - `features/space-map/` — `SpaceMapWidget`: recharts `Treemap` fed by
   `useDirectoryUsage(nodeId)`; click a directory tile to drill in; breadcrumb to climb
-  back (same model as largest-files).
+  back. **Replaces `LargestFilesWidget`** — the `features/largest-files/` module, its
+  tests, and its backend top-files query/endpoint are deleted once SpaceMapWidget
+  lands. A global "top N largest files" list is a possible future follow-up if missed.
 - `features/file-types/` — `FileTypesWidget`: stacked horizontal bar + legend from
   `/api/file-types`; styled divs, no chart lib.
 - `features/activity/` — `ActivityFeedWidget`: list from `/api/changes`; Lucide
@@ -178,5 +185,6 @@ independently — one broken endpoint never blocks the rest of the dashboard.
    background; restyle all existing components; delete Paper CSS.
 2. File-browser UX: search endpoint + FileSearchBar, sorting, multi-select + bulk
    delete, mobile pass.
-3. Widgets: directories/usage endpoint + SpaceMapWidget; file-types endpoint +
-   FileTypesWidget; scanner diff + changes table/endpoint + ActivityFeedWidget.
+3. Widgets: directories/usage endpoint + SpaceMapWidget (removing largest-files
+   feature + endpoint); file-types endpoint + FileTypesWidget; scanner diff + changes
+   table/endpoint + ActivityFeedWidget.
