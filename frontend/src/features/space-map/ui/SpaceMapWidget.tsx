@@ -10,6 +10,8 @@ import { WidgetError } from '@/shared/ui/WidgetError';
 import { useDirectoryUsage } from '../queries/useDirectoryUsage';
 import type { UsageChild } from '../space-map.types';
 
+import { SpaceMapCell } from './SpaceMapCell';
+
 interface Crumb {
   id: number | undefined;
   name: string;
@@ -25,7 +27,7 @@ const SpaceMapSkeleton = () => (
 );
 
 export const SpaceMapWidget = () => {
-  const [stack, setStack] = useState<Crumb[]>([{ id: undefined, name: 'Root' }]);
+  const [stack, setStack] = useState<Crumb[]>([{ id: undefined, name: 'root' }]);
   const current = stack[stack.length - 1];
   const { data, isLoading, isError, refetch } = useDirectoryUsage(current.id);
   const tokens = useThemeTokens(TOKEN_NAMES);
@@ -134,15 +136,21 @@ export const SpaceMapWidget = () => {
         <div className="font-ui text-[13px] text-muted py-8 text-center">Empty directory.</div>
       ) : (
         <>
-          <div className="h-44 mb-3" aria-hidden>
-            <ResponsiveContainer width="100%" height="100%">
+          {/* Height is a fixed number (11rem, matching the skeleton's h-44) rather
+              than "100%": ResponsiveContainer's first render happens before it has
+              measured its container, and a percentage height resolves against that
+              unmeasured size (-1), making recharts log a chart-size warning on
+              every mount. A known height keeps the pre-measurement render valid
+              while the width stays responsive. */}
+          <div className="mb-3" aria-hidden>
+            <ResponsiveContainer width="100%" height={176}>
               <Treemap
                 data={treemapData}
                 dataKey="size"
                 nameKey="name"
-                stroke="transparent"
                 isAnimationActive={false}
                 onClick={handleTreemapClick}
+                content={<SpaceMapCell />}
               />
             </ResponsiveContainer>
           </div>

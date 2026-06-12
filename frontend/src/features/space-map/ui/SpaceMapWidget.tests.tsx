@@ -115,6 +115,26 @@ describe('SpaceMapWidget', () => {
     expect(screen.getByRole('navigation', { name: /space map path/i })).toHaveTextContent('media');
   });
 
+  it('does not log chart-size warnings during the pre-measurement render', () => {
+    stubMatchMedia();
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    mockUseDirectoryUsage.mockReturnValue({
+      data: { parent_id: null, parent_path: null, children: [mockDir, mockFile] },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof directoryUsageHook.useDirectoryUsage>);
+
+    renderWidget();
+
+    const sizeWarnings = warnSpy.mock.calls.filter(([message]) =>
+      String(message).includes('should be greater than 0'),
+    );
+    expect(sizeWarnings).toHaveLength(0);
+    warnSpy.mockRestore();
+  });
+
   it('climbs back via breadcrumb', async () => {
     stubMatchMedia();
     const user = userEvent.setup();
