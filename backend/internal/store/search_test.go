@@ -139,6 +139,20 @@ func TestSearchFiles_MinSizeFilterExcludesDirectories(t *testing.T) {
 	}
 }
 
+func TestSearchFiles_EscapesUnderscoreWildcard(t *testing.T) {
+	s := openSearchStore(t)
+	seedSearchTree(t, s)
+
+	// "_" must match literally (LIKE would otherwise treat it as any-single-char).
+	got, err := s.SearchFiles(context.Background(), store.SearchFilesParams{Query: "note_", Limit: 100})
+	if err != nil {
+		t.Fatalf("SearchFiles: %v", err)
+	}
+	if len(got) != 0 {
+		t.Fatalf("expected no matches for literal underscore, got %+v", got)
+	}
+}
+
 func TestSearchFiles_LimitCapsResults(t *testing.T) {
 	s := openSearchStore(t)
 	seedSearchTree(t, s)

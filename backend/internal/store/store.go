@@ -208,7 +208,7 @@ FROM files WHERE parent_id IS NOT NULL`
 		query += ` AND is_dir = 0 AND size >= ?`
 		args = append(args, p.MinSize)
 	}
-	query += ` ORDER BY is_dir DESC, name ASC LIMIT ?`
+	query += ` ORDER BY is_dir DESC, name ASC, id ASC LIMIT ?`
 	args = append(args, p.Limit)
 
 	rows, err := s.db.QueryContext(ctx, query, args...)
