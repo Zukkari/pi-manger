@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@tanstack/react-router', () => ({
   useSearch: vi.fn(),
@@ -10,16 +10,24 @@ vi.mock('@tanstack/react-router', () => ({
 }));
 vi.mock('../queries/useFiles');
 vi.mock('../queries/useDeleteFile');
+vi.mock('../queries/useFileSearch');
+vi.mock('@/shared/lib/useDebouncedValue', () => ({
+  useDebouncedValue: (v: unknown) => v,
+}));
 
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import * as filesHook from '../queries/useFiles';
 import * as deleteFileHook from '../queries/useDeleteFile';
+import * as fileSearchHook from '../queries/useFileSearch';
 import { FileBrowserWidget } from './FileBrowserWidget';
 
 const mockUseSearch = vi.mocked(useSearch);
 const mockUseNavigate = vi.mocked(useNavigate);
 const mockUseFiles = vi.spyOn(filesHook, 'useFiles');
 const mockUseDeleteFile = vi.spyOn(deleteFileHook, 'useDeleteFile');
+const mockUseFileSearch = vi.spyOn(fileSearchHook, 'useFileSearch');
+
+const defaultSearchReturn = { data: undefined, isLoading: false, isError: false, refetch: vi.fn() } as unknown as ReturnType<typeof fileSearchHook.useFileSearch>;
 
 const rootEntries = [
   { id: 1, parent_id: null, name: 'backups', path: '/backups', size: 0, is_dir: true, modified_at: 0 },
@@ -27,6 +35,10 @@ const rootEntries = [
 ];
 
 describe('FileBrowserWidget', () => {
+  beforeEach(() => {
+    mockUseFileSearch.mockReturnValue(defaultSearchReturn);
+  });
+
   it('renders a loading spinner while fetching', () => {
     mockUseSearch.mockReturnValue({ parent_id: undefined });
     mockUseNavigate.mockReturnValue(vi.fn());
@@ -148,5 +160,62 @@ describe('FileBrowserWidget', () => {
     render(<FileBrowserWidget />);
 
     expect(screen.getByText(/empty directory/i)).toBeInTheDocument();
+  });
+
+  it('shows search results instead of the folder listing while searching', async () => {
+    // Arrange: folder listing has two entries; search returns one hit.
+    // useDebouncedValue is mocked as identity so typing immediately triggers search mode.
+    const searchEntry = { id: 99, parent_id: 1, name: 'note.txt', path: '/backups/note.txt', size: 100, is_dir: false, modified_at: 0 };
+    mockUseSearch.mockReturnValue({ parent_id: undefined });
+    mockUseNavigate.mockReturnValue(vi.fn());
+    mockUseFiles.mockReturnValue({ data: rootEntries, isLoading: false, isError: false, refetch: vi.fn() } as unknown as ReturnType<typeof filesHook.useFiles>);
+    mockUseDeleteFile.mockReturnValue({ mutate: vi.fn(), isPending: false } as unknown as ReturnType<typeof deleteFileHook.useDeleteFile>);
+    mockUseFileSearch.mockReturnValue({
+      data: [searchEntry],
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof fileSearchHook.useFileSearch>);
+
+    render(<FileBrowserWidget />);
+
+    // Before search: folder entries visible, breadcrumb nav present
+    expect(screen.getByText('backups')).toBeInTheDocument();
+    expect(screen.getByRole('navigation', { name: /breadcrumb/i })).toBeInTheDocument();
+
+    // Act: type a query long enough to trigger isSearching (≥2 chars)
+    await userEvent.type(screen.getByRole('searchbox', { name: /search files/i }), 'no');
+
+    // Assert: search results visible, breadcrumb nav gone
+    expect(screen.getByText('note.txt')).toBeInTheDocument();
+    expect(screen.queryByRole('navigation', { name: /breadcrumb/i })).not.toBeInTheDocument();
+  });
+
+  it('clearing the search returns to the folder listing', async () => {
+    // Arrange: start in search mode with a hit
+    const searchEntry = { id: 99, parent_id: 1, name: 'note.txt', path: '/backups/note.txt', size: 100, is_dir: false, modified_at: 0 };
+    mockUseSearch.mockReturnValue({ parent_id: undefined });
+    mockUseNavigate.mockReturnValue(vi.fn());
+    mockUseFiles.mockReturnValue({ data: rootEntries, isLoading: false, isError: false, refetch: vi.fn() } as unknown as ReturnType<typeof filesHook.useFiles>);
+    mockUseDeleteFile.mockReturnValue({ mutate: vi.fn(), isPending: false } as unknown as ReturnType<typeof deleteFileHook.useDeleteFile>);
+    mockUseFileSearch.mockReturnValue({
+      data: [searchEntry],
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof fileSearchHook.useFileSearch>);
+
+    render(<FileBrowserWidget />);
+
+    // Type a query to enter search mode
+    await userEvent.type(screen.getByRole('searchbox', { name: /search files/i }), 'no');
+    expect(screen.getByText('note.txt')).toBeInTheDocument();
+
+    // Act: clear via the clear button
+    await userEvent.click(screen.getByRole('button', { name: /clear search/i }));
+
+    // Assert: folder listing back, breadcrumb nav visible
+    expect(screen.getByText('backups')).toBeInTheDocument();
+    expect(screen.getByRole('navigation', { name: /breadcrumb/i })).toBeInTheDocument();
   });
 });

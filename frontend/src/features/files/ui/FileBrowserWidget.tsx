@@ -1,14 +1,18 @@
 import { Fragment, useEffect, useState } from 'react';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 
+import { useDebouncedValue } from '@/shared/lib/useDebouncedValue';
 import { GlassCard } from '@/shared/ui/GlassCard';
 import { WidgetError } from '@/shared/ui/WidgetError';
 
 import type { FileEntry } from '../files.types';
 import { useDeleteFile } from '../queries/useDeleteFile';
+import { useFileSearch } from '../queries/useFileSearch';
 import { useFiles } from '../queries/useFiles';
 import { DeleteConfirmDialog } from './DeleteConfirmDialog';
 import { FileRow } from './FileRow';
+import { FileSearchBar } from './FileSearchBar';
+import { SearchResultsList } from './SearchResultsList';
 
 interface BreadcrumbEntry {
   id: number | undefined;
@@ -42,9 +46,13 @@ export const FileBrowserWidget = () => {
   const [rootName, setRootName] = useState('Root');
   const [stack, setStack] = useState<BreadcrumbEntry[]>([{ id: undefined, name: 'Root' }]);
   const [pendingDelete, setPendingDelete] = useState<FileEntry | null>(null);
+  const [searchInput, setSearchInput] = useState('');
+  const debouncedQuery = useDebouncedValue(searchInput, 300);
 
   const { data, isLoading, isError, refetch } = useFiles(parent_id);
   const { mutate: deleteFile, isPending: isDeleting } = useDeleteFile(parent_id);
+  const search = useFileSearch(debouncedQuery);
+  const isSearching = debouncedQuery.trim().length >= 2;
 
   useEffect(() => {
     if (parent_id !== undefined) return;
@@ -98,83 +106,104 @@ export const FileBrowserWidget = () => {
     deleteFile(pendingDelete.id, { onSuccess: () => setPendingDelete(null) });
   };
 
+  const handleSearchNavigate = (parentId: number | undefined) => {
+    setSearchInput('');
+    navigate({ to: '/files', search: { parent_id: parentId } });
+  };
+
   return (
     <div className="flex flex-col gap-3">
       <div className="font-data text-[11px] uppercase tracking-[0.2em] text-muted mb-2.5">Files</div>
 
-      <nav aria-label="breadcrumb" className="flex items-center gap-1 flex-wrap">
-        {effectiveStack.map((crumb, i) => {
-          const isLast = i === effectiveStack.length - 1;
-          return (
-            <span key={crumb.id ?? `root-${i}`} className="flex items-center gap-1">
-              {i > 0 && (
-                <span className="font-data text-[10px] text-dim">›</span>
-              )}
-              {i === 0 && !isLast ? (
-                <Link
-                  to="/files"
-                  search={{ parent_id: undefined }}
-                  onClick={() => setStack([{ id: undefined, name: rootName }])}
-                  className="breadcrumb-link"
-                >
-                  {crumb.name}
-                </Link>
-              ) : i > 0 && !isLast ? (
-                <Link
-                  to="/files"
-                  search={{ parent_id: crumb.id }}
-                  onClick={() => setStack(prev => prev.slice(0, i + 1))}
-                  className="breadcrumb-link"
-                >
-                  {crumb.name}
-                </Link>
-              ) : (
-                <span className="font-data text-xs font-medium text-ink">
-                  {crumb.name}
+      <FileSearchBar value={searchInput} onChange={setSearchInput} />
+
+      {isSearching ? (
+        <>
+          {search.isLoading && <FileSkeleton />}
+          {search.isError && (
+            <WidgetError message="Search failed. Is the API running?" onRetry={() => search.refetch()} />
+          )}
+          {!search.isLoading && !search.isError && (
+            <SearchResultsList results={search.data ?? []} onNavigate={handleSearchNavigate} />
+          )}
+        </>
+      ) : (
+        <>
+          <nav aria-label="breadcrumb" className="flex items-center gap-1 flex-wrap">
+            {effectiveStack.map((crumb, i) => {
+              const isLast = i === effectiveStack.length - 1;
+              return (
+                <span key={crumb.id ?? `root-${i}`} className="flex items-center gap-1">
+                  {i > 0 && (
+                    <span className="font-data text-[10px] text-dim">›</span>
+                  )}
+                  {i === 0 && !isLast ? (
+                    <Link
+                      to="/files"
+                      search={{ parent_id: undefined }}
+                      onClick={() => setStack([{ id: undefined, name: rootName }])}
+                      className="breadcrumb-link"
+                    >
+                      {crumb.name}
+                    </Link>
+                  ) : i > 0 && !isLast ? (
+                    <Link
+                      to="/files"
+                      search={{ parent_id: crumb.id }}
+                      onClick={() => setStack(prev => prev.slice(0, i + 1))}
+                      className="breadcrumb-link"
+                    >
+                      {crumb.name}
+                    </Link>
+                  ) : (
+                    <span className="font-data text-xs font-medium text-ink">
+                      {crumb.name}
+                    </span>
+                  )}
                 </span>
-              )}
-            </span>
-          );
-        })}
-        {effectiveStack.length > 0 && (
-          <span className="font-data text-[10px] text-dim ml-auto">
-            {data.length} {data.length === 1 ? 'item' : 'items'}
-          </span>
-        )}
-      </nav>
+              );
+            })}
+            {effectiveStack.length > 0 && (
+              <span className="font-data text-[10px] text-dim ml-auto">
+                {data.length} {data.length === 1 ? 'item' : 'items'}
+              </span>
+            )}
+          </nav>
 
-      <GlassCard className="overflow-hidden">
-        {isInsideFolder && (
-          <>
-            <FileRow isParent onParentClick={handleNavigateUp} />
-            {data.length > 0 && <div className="border-t border-glass" />}
-          </>
-        )}
+          <GlassCard className="overflow-hidden">
+            {isInsideFolder && (
+              <>
+                <FileRow isParent onParentClick={handleNavigateUp} />
+                {data.length > 0 && <div className="border-t border-glass" />}
+              </>
+            )}
 
-        {data.length === 0 && (
-          <div className="px-6 py-12 text-center">
-            <div className="font-ui text-base font-semibold tracking-wide text-muted mb-1.5">
-              Empty directory
-            </div>
-            <div className="font-ui text-[13px] text-muted">
-              No files found in this location.
-            </div>
-          </div>
-        )}
+            {data.length === 0 && (
+              <div className="px-6 py-12 text-center">
+                <div className="font-ui text-base font-semibold tracking-wide text-muted mb-1.5">
+                  Empty directory
+                </div>
+                <div className="font-ui text-[13px] text-muted">
+                  No files found in this location.
+                </div>
+              </div>
+            )}
 
-        {data.map((entry, i) => (
-          <Fragment key={entry.id}>
-            {i > 0 && <div className="border-t border-glass" />}
-            <FileRow
-              entry={entry}
-              index={i}
-              isLast={i === data.length - 1}
-              onClick={handleNavigateInto}
-              onDelete={setPendingDelete}
-            />
-          </Fragment>
-        ))}
-      </GlassCard>
+            {data.map((entry, i) => (
+              <Fragment key={entry.id}>
+                {i > 0 && <div className="border-t border-glass" />}
+                <FileRow
+                  entry={entry}
+                  index={i}
+                  isLast={i === data.length - 1}
+                  onClick={handleNavigateInto}
+                  onDelete={setPendingDelete}
+                />
+              </Fragment>
+            ))}
+          </GlassCard>
+        </>
+      )}
 
       {pendingDelete && (
         <DeleteConfirmDialog
