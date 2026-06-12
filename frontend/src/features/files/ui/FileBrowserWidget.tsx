@@ -215,7 +215,13 @@ export const FileBrowserWidget = () => {
 
       {pendingDelete && (
         <DeleteConfirmDialog
-          entry={pendingDelete}
+          title="Delete file?"
+          description={
+            <>
+              <strong className="text-ink font-medium">{pendingDelete.name}</strong>
+              {' '}will be permanently removed. This cannot be undone.
+            </>
+          }
           isPending={isDeleting}
           onConfirm={handleConfirmDelete}
           onCancel={() => setPendingDelete(null)}
