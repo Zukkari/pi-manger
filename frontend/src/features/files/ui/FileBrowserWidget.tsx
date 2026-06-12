@@ -6,6 +6,8 @@ import { GlassCard } from '@/shared/ui/GlassCard';
 import { WidgetError } from '@/shared/ui/WidgetError';
 
 import type { FileEntry } from '../files.types';
+import { DEFAULT_SORT, sortEntries } from '../lib/sortEntries';
+import type { SortState } from '../lib/sortEntries';
 import { useDeleteFile } from '../queries/useDeleteFile';
 import { useFileSearch } from '../queries/useFileSearch';
 import { useFiles } from '../queries/useFiles';
@@ -13,6 +15,7 @@ import { DeleteConfirmDialog } from './DeleteConfirmDialog';
 import { FileRow } from './FileRow';
 import { FileSearchBar } from './FileSearchBar';
 import { SearchResultsList } from './SearchResultsList';
+import { SortHeader } from './SortHeader';
 
 interface BreadcrumbEntry {
   id: number | undefined;
@@ -48,6 +51,7 @@ export const FileBrowserWidget = () => {
   const [pendingDelete, setPendingDelete] = useState<FileEntry | null>(null);
   const [searchInput, setSearchInput] = useState('');
   const debouncedQuery = useDebouncedValue(searchInput, 300);
+  const [sort, setSort] = useState<SortState>(DEFAULT_SORT);
 
   const { data, isLoading, isError, refetch } = useFiles(parent_id);
   const { mutate: deleteFile, isPending: isDeleting } = useDeleteFile(parent_id);
@@ -68,6 +72,8 @@ export const FileBrowserWidget = () => {
   if (isError || !data) {
     return <WidgetError message="Failed to load files. Is the API running?" onRetry={() => refetch()} />;
   }
+
+  const sortedData = sortEntries(data, sort);
 
   const isInsideFolder = parent_id !== undefined;
 
@@ -170,6 +176,8 @@ export const FileBrowserWidget = () => {
             )}
           </nav>
 
+          <SortHeader sort={sort} onChange={setSort} />
+
           <GlassCard className="overflow-hidden">
             {isInsideFolder && (
               <>
@@ -189,13 +197,13 @@ export const FileBrowserWidget = () => {
               </div>
             )}
 
-            {data.map((entry, i) => (
+            {sortedData.map((entry, i) => (
               <Fragment key={entry.id}>
                 {i > 0 && <div className="border-t border-glass" />}
                 <FileRow
                   entry={entry}
                   index={i}
-                  isLast={i === data.length - 1}
+                  isLast={i === sortedData.length - 1}
                   onClick={handleNavigateInto}
                   onDelete={setPendingDelete}
                 />
