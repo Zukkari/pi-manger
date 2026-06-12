@@ -1,18 +1,18 @@
 import { useEffect } from 'react';
+import type { ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 
 import { GlassCard } from '@/shared/ui/GlassCard';
 
-import type { FileEntry } from '../files.types';
-
 interface DeleteConfirmDialogProps {
-  entry: FileEntry;
+  title: string;
+  description: ReactNode;
   isPending: boolean;
   onConfirm: () => void;
   onCancel: () => void;
 }
 
-export const DeleteConfirmDialog = ({ entry, isPending, onConfirm, onCancel }: DeleteConfirmDialogProps) => {
+export const DeleteConfirmDialog = ({ title, description, isPending, onConfirm, onCancel }: DeleteConfirmDialogProps) => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && !isPending) onCancel();
@@ -27,10 +27,9 @@ export const DeleteConfirmDialog = ({ entry, isPending, onConfirm, onCancel }: D
       onClick={!isPending ? onCancel : undefined}
     >
       <GlassCard className="p-6 w-full max-w-xs" onClick={e => e.stopPropagation()}>
-        <h2 className="font-ui text-lg font-semibold text-danger mb-2">Delete file?</h2>
+        <h2 className="font-ui text-lg font-semibold text-danger mb-2">{title}</h2>
         <p className="font-ui text-[13px] text-muted leading-relaxed mb-5">
-          <strong className="text-ink font-medium">{entry.name}</strong>
-          {' '}will be permanently removed. This cannot be undone.
+          {description}
         </p>
         <div className="flex flex-col gap-2">
           <button
