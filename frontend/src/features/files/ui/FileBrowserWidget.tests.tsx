@@ -11,6 +11,7 @@ vi.mock('@tanstack/react-router', () => ({
 vi.mock('../queries/useFiles');
 vi.mock('../queries/useDeleteFile');
 vi.mock('../queries/useFileSearch');
+vi.mock('../queries/useBulkDeleteFiles');
 vi.mock('@/shared/lib/useDebouncedValue', () => ({
   useDebouncedValue: (v: unknown) => v,
 }));
@@ -19,6 +20,7 @@ import { useNavigate, useSearch } from '@tanstack/react-router';
 import * as filesHook from '../queries/useFiles';
 import * as deleteFileHook from '../queries/useDeleteFile';
 import * as fileSearchHook from '../queries/useFileSearch';
+import * as bulkDeleteHook from '../queries/useBulkDeleteFiles';
 import { FileBrowserWidget } from './FileBrowserWidget';
 
 const mockUseSearch = vi.mocked(useSearch);
@@ -26,8 +28,10 @@ const mockUseNavigate = vi.mocked(useNavigate);
 const mockUseFiles = vi.spyOn(filesHook, 'useFiles');
 const mockUseDeleteFile = vi.spyOn(deleteFileHook, 'useDeleteFile');
 const mockUseFileSearch = vi.spyOn(fileSearchHook, 'useFileSearch');
+const mockUseBulkDeleteFiles = vi.spyOn(bulkDeleteHook, 'useBulkDeleteFiles');
 
 const defaultSearchReturn = { data: undefined, isLoading: false, isError: false, refetch: vi.fn() } as unknown as ReturnType<typeof fileSearchHook.useFileSearch>;
+const defaultBulkDeleteReturn = { mutate: vi.fn(), isPending: false } as unknown as ReturnType<typeof bulkDeleteHook.useBulkDeleteFiles>;
 
 const rootEntries = [
   { id: 1, parent_id: null, name: 'backups', path: '/backups', size: 0, is_dir: true, modified_at: 0 },
@@ -37,6 +41,7 @@ const rootEntries = [
 describe('FileBrowserWidget', () => {
   beforeEach(() => {
     mockUseFileSearch.mockReturnValue(defaultSearchReturn);
+    mockUseBulkDeleteFiles.mockReturnValue(defaultBulkDeleteReturn);
   });
 
   it('renders a loading spinner while fetching', () => {
@@ -217,5 +222,86 @@ describe('FileBrowserWidget', () => {
     // Assert: folder listing back, breadcrumb nav visible
     expect(screen.getByText('backups')).toBeInTheDocument();
     expect(screen.getByRole('navigation', { name: /breadcrumb/i })).toBeInTheDocument();
+  });
+
+  it('entering selection mode shows checkboxes and the selection bar', async () => {
+    mockUseSearch.mockReturnValue({ parent_id: undefined });
+    mockUseNavigate.mockReturnValue(vi.fn());
+    mockUseFiles.mockReturnValue({ data: rootEntries, isLoading: false, isError: false, refetch: vi.fn() } as unknown as ReturnType<typeof filesHook.useFiles>);
+    mockUseDeleteFile.mockReturnValue({ mutate: vi.fn(), isPending: false } as unknown as ReturnType<typeof deleteFileHook.useDeleteFile>);
+
+    render(<FileBrowserWidget />);
+
+    // Before: no checkboxes, no selection bar
+    expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
+    expect(screen.queryByText(/0 selected/i)).not.toBeInTheDocument();
+
+    // Act: click the Select toggle button
+    await userEvent.click(screen.getByRole('button', { name: /^select$/i }));
+
+    // Assert: checkboxes appear and selection bar shows "0 selected"
+    expect(screen.getAllByRole('checkbox').length).toBeGreaterThan(0);
+    expect(screen.getByText(/0 selected/i)).toBeInTheDocument();
+  });
+
+  it('bulk delete flows through confirm dialog and clears selection on full success', async () => {
+    const mutate = vi.fn((_ids: number[], opts?: { onSuccess?: (result: { failedIds: number[] }) => void }) => {
+      opts?.onSuccess?.({ failedIds: [] });
+    });
+    mockUseBulkDeleteFiles.mockReturnValue({ mutate, isPending: false } as unknown as ReturnType<typeof bulkDeleteHook.useBulkDeleteFiles>);
+
+    mockUseSearch.mockReturnValue({ parent_id: undefined });
+    mockUseNavigate.mockReturnValue(vi.fn());
+    mockUseFiles.mockReturnValue({ data: rootEntries, isLoading: false, isError: false, refetch: vi.fn() } as unknown as ReturnType<typeof filesHook.useFiles>);
+    mockUseDeleteFile.mockReturnValue({ mutate: vi.fn(), isPending: false } as unknown as ReturnType<typeof deleteFileHook.useDeleteFile>);
+
+    render(<FileBrowserWidget />);
+
+    // Enter selection mode
+    await userEvent.click(screen.getByRole('button', { name: /^select$/i }));
+
+    // Select both rows
+    const checkboxes = screen.getAllByRole('checkbox');
+    await userEvent.click(checkboxes[0]);
+    await userEvent.click(checkboxes[1]);
+    expect(screen.getByText(/2 selected/i)).toBeInTheDocument();
+
+    // Click Delete selected
+    await userEvent.click(screen.getByRole('button', { name: /delete selected/i }));
+
+    // Confirm in the dialog
+    await userEvent.click(screen.getByRole('button', { name: /^delete$/i }));
+
+    // Assert: selection bar is gone (selection mode cleared on full success)
+    expect(screen.queryByText(/selected/i)).not.toBeInTheDocument();
+  });
+
+  it('partial failure keeps failed rows selected with an error message', async () => {
+    // id=2 (config.yaml) fails; id=1 (backups) succeeds
+    const mutate = vi.fn((_ids: number[], opts?: { onSuccess?: (result: { failedIds: number[] }) => void }) => {
+      opts?.onSuccess?.({ failedIds: [2] });
+    });
+    mockUseBulkDeleteFiles.mockReturnValue({ mutate, isPending: false } as unknown as ReturnType<typeof bulkDeleteHook.useBulkDeleteFiles>);
+
+    mockUseSearch.mockReturnValue({ parent_id: undefined });
+    mockUseNavigate.mockReturnValue(vi.fn());
+    mockUseFiles.mockReturnValue({ data: rootEntries, isLoading: false, isError: false, refetch: vi.fn() } as unknown as ReturnType<typeof filesHook.useFiles>);
+    mockUseDeleteFile.mockReturnValue({ mutate: vi.fn(), isPending: false } as unknown as ReturnType<typeof deleteFileHook.useDeleteFile>);
+
+    render(<FileBrowserWidget />);
+
+    // Enter selection mode and select both rows
+    await userEvent.click(screen.getByRole('button', { name: /^select$/i }));
+    const checkboxes = screen.getAllByRole('checkbox');
+    await userEvent.click(checkboxes[0]);
+    await userEvent.click(checkboxes[1]);
+
+    // Click Delete selected and confirm
+    await userEvent.click(screen.getByRole('button', { name: /delete selected/i }));
+    await userEvent.click(screen.getByRole('button', { name: /^delete$/i }));
+
+    // Assert: 1 item remains selected and error message shown
+    expect(screen.getByText(/1 selected/i)).toBeInTheDocument();
+    expect(screen.getByText(/failed to delete 1 item/i)).toBeInTheDocument();
   });
 });

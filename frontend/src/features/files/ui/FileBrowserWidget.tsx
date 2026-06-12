@@ -8,6 +8,7 @@ import { WidgetError } from '@/shared/ui/WidgetError';
 import type { FileEntry } from '../files.types';
 import { DEFAULT_SORT, sortEntries } from '../lib/sortEntries';
 import type { SortState } from '../lib/sortEntries';
+import { useBulkDeleteFiles } from '../queries/useBulkDeleteFiles';
 import { useDeleteFile } from '../queries/useDeleteFile';
 import { useFileSearch } from '../queries/useFileSearch';
 import { useFiles } from '../queries/useFiles';
@@ -15,6 +16,7 @@ import { DeleteConfirmDialog } from './DeleteConfirmDialog';
 import { FileRow } from './FileRow';
 import { FileSearchBar } from './FileSearchBar';
 import { SearchResultsList } from './SearchResultsList';
+import { SelectionBar } from './SelectionBar';
 import { SortHeader } from './SortHeader';
 
 interface BreadcrumbEntry {
@@ -49,12 +51,17 @@ export const FileBrowserWidget = () => {
   const [rootName, setRootName] = useState('Root');
   const [stack, setStack] = useState<BreadcrumbEntry[]>([{ id: undefined, name: 'Root' }]);
   const [pendingDelete, setPendingDelete] = useState<FileEntry | null>(null);
+  const [selecting, setSelecting] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false);
+  const [bulkError, setBulkError] = useState<string | null>(null);
   const [searchInput, setSearchInput] = useState('');
   const debouncedQuery = useDebouncedValue(searchInput, 300);
   const [sort, setSort] = useState<SortState>(DEFAULT_SORT);
 
   const { data, isLoading, isError, refetch } = useFiles(parent_id);
   const { mutate: deleteFile, isPending: isDeleting } = useDeleteFile(parent_id);
+  const bulkDelete = useBulkDeleteFiles(parent_id);
   const search = useFileSearch(debouncedQuery);
   const isSearching = debouncedQuery.trim().length >= 2;
 
@@ -117,6 +124,34 @@ export const FileBrowserWidget = () => {
     navigate({ to: '/files', search: { parent_id: parentId } });
   };
 
+  const handleToggleSelect = (entry: FileEntry) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(entry.id)) {
+        next.delete(entry.id);
+      } else {
+        next.add(entry.id);
+      }
+      return next;
+    });
+  };
+
+  const handleBulkDelete = () => {
+    bulkDelete.mutate([...selectedIds], {
+      onSuccess: ({ failedIds }) => {
+        setBulkConfirmOpen(false);
+        if (failedIds.length === 0) {
+          setSelecting(false);
+          setSelectedIds(new Set());
+          setBulkError(null);
+          return;
+        }
+        setSelectedIds(new Set(failedIds));
+        setBulkError(`Failed to delete ${failedIds.length} item${failedIds.length === 1 ? '' : 's'}.`);
+      },
+    });
+  };
+
   return (
     <div className="flex flex-col gap-3">
       <div className="font-data text-[11px] uppercase tracking-[0.2em] text-muted mb-2.5">Files</div>
@@ -176,7 +211,33 @@ export const FileBrowserWidget = () => {
             )}
           </nav>
 
-          <SortHeader sort={sort} onChange={setSort} />
+          <div className="flex items-center gap-2">
+            <SortHeader sort={sort} onChange={setSort} />
+            <button
+              type="button"
+              aria-pressed={selecting}
+              onClick={() => { setSelecting(s => !s); setSelectedIds(new Set()); setBulkError(null); }}
+              className={
+                'px-3 py-1.5 min-h-8 rounded-full border font-ui text-xs font-semibold cursor-pointer transition-colors ' +
+                (selecting ? 'bg-surface-hi text-accent border-glass' : 'bg-transparent text-muted border-transparent hover:text-ink')
+              }
+            >
+              Select
+            </button>
+          </div>
+
+          {selecting && (
+            <>
+              <SelectionBar
+                count={selectedIds.size}
+                onDelete={() => setBulkConfirmOpen(true)}
+                onCancel={() => { setSelecting(false); setSelectedIds(new Set()); setBulkError(null); }}
+              />
+              {bulkError && (
+                <div className="font-ui text-[13px] text-danger">{bulkError}</div>
+              )}
+            </>
+          )}
 
           <GlassCard className="overflow-hidden">
             {isInsideFolder && (
@@ -206,6 +267,9 @@ export const FileBrowserWidget = () => {
                   isLast={i === sortedData.length - 1}
                   onClick={handleNavigateInto}
                   onDelete={setPendingDelete}
+                  selectable={selecting}
+                  selected={selectedIds.has(entry.id)}
+                  onToggleSelect={handleToggleSelect}
                 />
               </Fragment>
             ))}
@@ -225,6 +289,16 @@ export const FileBrowserWidget = () => {
           isPending={isDeleting}
           onConfirm={handleConfirmDelete}
           onCancel={() => setPendingDelete(null)}
+        />
+      )}
+
+      {bulkConfirmOpen && (
+        <DeleteConfirmDialog
+          title={`Delete ${selectedIds.size} item${selectedIds.size === 1 ? '' : 's'}?`}
+          description="The selected items will be permanently removed. This cannot be undone."
+          isPending={bulkDelete.isPending}
+          onConfirm={handleBulkDelete}
+          onCancel={() => setBulkConfirmOpen(false)}
         />
       )}
     </div>
