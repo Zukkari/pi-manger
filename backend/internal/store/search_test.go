@@ -153,6 +153,42 @@ func TestSearchFiles_EscapesUnderscoreWildcard(t *testing.T) {
 	}
 }
 
+func TestSearchFiles_ExtensionFilterExcludesDirectories(t *testing.T) {
+	s := openSearchStore(t)
+	seedSearchTree(t, s)
+
+	ctx := context.Background()
+	now := time.Now().Unix()
+
+	// Seed a directory whose name ends in .mkv — it must not appear in extension results.
+	docsID := int64(0)
+	rows, err := s.SearchFiles(ctx, store.SearchFilesParams{Query: "docs", Limit: 1})
+	if err != nil {
+		t.Fatalf("lookup docs: %v", err)
+	}
+	if len(rows) == 1 {
+		docsID = rows[0].ID
+	}
+	if _, err := s.UpsertFile(ctx, store.UpsertFileParams{
+		ParentID:   sql.NullInt64{Int64: docsID, Valid: docsID != 0},
+		Path:       "/data/docs/season.mkv",
+		Name:       "season.mkv",
+		IsDir:      1,
+		ModifiedAt: now,
+		SyncedAt:   now,
+	}); err != nil {
+		t.Fatalf("upsert dir season.mkv: %v", err)
+	}
+
+	got, err := s.SearchFiles(ctx, store.SearchFilesParams{Extension: "mkv", Limit: 100})
+	if err != nil {
+		t.Fatalf("SearchFiles: %v", err)
+	}
+	if len(got) != 1 || got[0].Name != "movie.mkv" {
+		t.Fatalf("expected only [movie.mkv], got %+v", got)
+	}
+}
+
 func TestSearchFiles_LimitCapsResults(t *testing.T) {
 	s := openSearchStore(t)
 	seedSearchTree(t, s)

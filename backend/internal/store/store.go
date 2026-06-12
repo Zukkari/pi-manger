@@ -201,7 +201,7 @@ FROM files WHERE parent_id IS NOT NULL`
 		args = append(args, "%"+escapeLike(p.Query)+"%")
 	}
 	if p.Extension != "" {
-		query += ` AND lower(name) LIKE ? ESCAPE '\'`
+		query += ` AND is_dir = 0 AND lower(name) LIKE ? ESCAPE '\'`
 		args = append(args, "%."+escapeLike(strings.ToLower(p.Extension)))
 	}
 	if p.MinSize > 0 {
