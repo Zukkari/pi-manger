@@ -100,14 +100,17 @@ describe('FileRow', () => {
   it('opens menu downward when not the last row', async () => {
     render(<FileRow entry={file} onClick={vi.fn()} onDelete={vi.fn()} />);
     await userEvent.click(screen.getByRole('button', { name: /more options/i }));
-    expect(screen.getByRole('menu')).toHaveStyle({ top: '100%' });
+    // Direction is now controlled by Tailwind classes rather than inline styles
+    expect(screen.getByRole('menu').className).toContain('top-full');
+    expect(screen.getByRole('menu').className).not.toContain('bottom-full');
   });
 
   it('opens menu upward when isLast is true', async () => {
     render(<FileRow entry={file} isLast onClick={vi.fn()} onDelete={vi.fn()} />);
     await userEvent.click(screen.getByRole('button', { name: /more options/i }));
-    expect(screen.getByRole('menu')).toHaveStyle({ bottom: '100%' });
-    expect(screen.getByRole('menu')).not.toHaveStyle({ top: '100%' });
+    // Direction is now controlled by Tailwind classes rather than inline styles
+    expect(screen.getByRole('menu').className).toContain('bottom-full');
+    expect(screen.getByRole('menu').className).not.toContain('top-full');
   });
 
   it('closes the menu on a pointerdown outside it', async () => {

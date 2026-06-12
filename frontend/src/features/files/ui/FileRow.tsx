@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react';
+import { CornerLeftUp, FileText, Folder, MoreHorizontal, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 import type { FileEntry } from '../files.types';
@@ -16,37 +16,16 @@ const formatFileSize = (bytes: number): string => {
 const formatDate = (unixSec: number): string =>
   new Date(unixSec * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
-const FolderIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
-    <path
-      d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"
-      stroke="var(--paper-accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-    />
-  </svg>
+const IconBox = ({ isDir }: { isDir: boolean }) => (
+  <div
+    className={
+      'w-7 h-7 rounded-lg border border-glass flex items-center justify-center shrink-0 ' +
+      (isDir ? 'bg-surface-hi text-accent' : 'bg-transparent text-muted')
+    }
+  >
+    {isDir ? <Folder size={14} aria-hidden /> : <FileText size={14} aria-hidden />}
+  </div>
 );
-
-const FileIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
-    <path
-      d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"
-      stroke="var(--paper-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-    />
-    <polyline points="14 2 14 8 20 8" stroke="var(--paper-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
-
-
-const iconBoxStyle = (isDir: boolean): CSSProperties => ({
-  width: '28px',
-  height: '28px',
-  border: '1px solid var(--paper-border)',
-  borderRadius: 0,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  flexShrink: 0,
-  background: isDir ? 'color-mix(in srgb, var(--paper-accent) 6%, transparent)' : 'transparent',
-});
 
 type FileRowProps =
   | { isParent: true; onParentClick: () => void; entry?: never; onClick?: never; onDelete?: never; index?: number; isLast?: never }
@@ -54,7 +33,6 @@ type FileRowProps =
 
 export const FileRow = ({ isParent, entry, onClick, onParentClick, onDelete, index, isLast }: FileRowProps) => {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [hovered, setHovered] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -78,18 +56,9 @@ export const FileRow = ({ isParent, entry, onClick, onParentClick, onDelete, ind
     };
   }, [menuOpen]);
 
-  const rowStyle: CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    padding: '10px 14px',
-    minHeight: '44px',
-    borderBottom: '1px solid var(--paper-border)',
-    transition: 'background 0.1s',
-    background: hovered ? 'color-mix(in srgb, var(--paper-accent) 4%, transparent)' : 'transparent',
-    animation: 'paper-slide-in 0.35s cubic-bezier(0.22,1,0.36,1) both',
-    animationDelay: `${(index ?? 0) * 50}ms`,
-  };
+  const rowClass =
+    'group row-enter flex items-center gap-3 px-3.5 py-2.5 min-h-11 transition-colors hover:bg-surface-hi';
+  const rowDelay = { animationDelay: `${(index ?? 0) * 50}ms` };
 
   if (isParent) {
     return (
@@ -97,125 +66,77 @@ export const FileRow = ({ isParent, entry, onClick, onParentClick, onDelete, ind
         type="button"
         onClick={onParentClick}
         aria-label="Go to parent directory"
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-        style={{ ...rowStyle, width: '100%', cursor: 'pointer', textAlign: 'left' }}
+        className={`${rowClass} w-full cursor-pointer text-left bg-transparent border-none`}
+        style={rowDelay}
       >
-        <div style={iconBoxStyle(true)}>
-          <FolderIcon />
+        <div className="w-7 h-7 rounded-lg border border-glass flex items-center justify-center shrink-0 bg-surface-hi text-muted">
+          <CornerLeftUp size={14} aria-hidden />
         </div>
-        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--paper-muted)' }}>
-          ..
-        </span>
+        <span className="font-ui text-sm text-muted">..</span>
       </button>
     );
   }
 
   const nameAndMeta = (
-    <div style={{ flex: 1, minWidth: 0 }}>
-      <div style={{
-        fontFamily: 'var(--font-ui)',
-        fontSize: '14px',
-        fontWeight: 500,
-        color: 'var(--paper-text)',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-        whiteSpace: 'nowrap',
-      }}>
+    <div className="flex-1 min-w-0">
+      <div className="font-ui text-sm font-medium text-ink overflow-hidden text-ellipsis whitespace-nowrap">
         {entry.name}
       </div>
     </div>
   );
 
   return (
-    <div
-      style={rowStyle}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-    >
+    <div className={rowClass} style={rowDelay}>
       {entry.is_dir ? (
         <button
           type="button"
           onClick={() => onClick(entry)}
-          style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0, background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: 0 }}
+          className="flex items-center gap-3 flex-1 min-w-0 bg-transparent border-none cursor-pointer text-left p-0"
         >
-          <div style={iconBoxStyle(true)}><FolderIcon /></div>
+          <IconBox isDir />
           {nameAndMeta}
         </button>
       ) : (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
-          <div style={iconBoxStyle(false)}><FileIcon /></div>
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <IconBox isDir={false} />
           {nameAndMeta}
         </div>
       )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px', flexShrink: 0 }}>
-        <span style={{ fontFamily: 'var(--font-data)', fontSize: '12px', color: 'var(--paper-muted)', fontWeight: 500 }}>
+      <div className="flex flex-col items-end gap-0.5 shrink-0">
+        <span className="font-data text-xs font-medium text-muted">
           {entry.is_dir ? '—' : formatFileSize(entry.size)}
         </span>
-        <span style={{ fontFamily: 'var(--font-data)', fontSize: '10px', color: 'var(--paper-dim)' }}>
-          {formatDate(entry.modified_at)}
-        </span>
+        <span className="font-data text-[10px] text-dim">{formatDate(entry.modified_at)}</span>
       </div>
 
-      <div ref={menuRef} style={{ position: 'relative', flexShrink: 0 }}>
+      <div ref={menuRef} className="relative shrink-0">
         <button
           type="button"
-          className="paper-row-menu-btn"
+          className="row-menu-btn w-7 h-7 flex items-center justify-center bg-transparent border-none cursor-pointer text-muted opacity-25 group-hover:opacity-100 transition-opacity"
           aria-label="More options"
           aria-haspopup="menu"
           aria-expanded={menuOpen}
           onClick={(e) => { e.stopPropagation(); setMenuOpen(o => !o); }}
-          style={{
-            width: '28px',
-            height: '28px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            fontFamily: 'var(--font-ui)',
-            fontSize: '16px',
-            color: 'var(--paper-muted)',
-            opacity: hovered ? 1 : 0.25,
-            transition: 'opacity 0.1s',
-          }}
         >
-          ⋯
+          <MoreHorizontal size={16} aria-hidden />
         </button>
         {menuOpen && (
           <div
             role="menu"
             aria-label="File actions"
-            style={{
-              position: 'absolute',
-              right: 0,
-              top: isLast ? undefined : '100%',
-              bottom: isLast ? '100%' : undefined,
-              zIndex: 10,
-              background: 'var(--paper-surface-hi)',
-              border: '1px solid var(--paper-border-bold)',
-              boxShadow: '3px 3px 0 var(--paper-border-bold)',
-              minWidth: '120px',
-            }}
+            className={
+              'absolute right-0 z-10 min-w-[130px] glass-card overflow-hidden ' +
+              (isLast ? 'bottom-full' : 'top-full')
+            }
           >
             <button
               type="button"
               role="menuitem"
               onClick={() => { onDelete(entry); setMenuOpen(false); }}
-              style={{
-                width: '100%',
-                textAlign: 'left',
-                padding: '10px 14px',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                fontFamily: 'var(--font-ui)',
-                fontSize: '13px',
-                color: 'var(--paper-danger)',
-              }}
+              className="w-full text-left px-3.5 py-2.5 bg-transparent border-none cursor-pointer font-ui text-[13px] text-danger flex items-center gap-2 hover:bg-surface-hi transition-colors"
             >
+              <Trash2 size={13} aria-hidden />
               Delete
             </button>
           </div>

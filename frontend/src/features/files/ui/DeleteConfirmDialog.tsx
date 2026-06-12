@@ -1,5 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
+
+import { GlassCard } from '@/shared/ui/GlassCard';
 
 import type { FileEntry } from '../files.types';
 
@@ -11,8 +13,6 @@ interface DeleteConfirmDialogProps {
 }
 
 export const DeleteConfirmDialog = ({ entry, isPending, onConfirm, onCancel }: DeleteConfirmDialogProps) => {
-  const [deleteHovered, setDeleteHovered] = useState(false);
-
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && !isPending) onCancel();
@@ -23,84 +23,24 @@ export const DeleteConfirmDialog = ({ entry, isPending, onConfirm, onCancel }: D
 
   return createPortal(
     <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 50,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '20px',
-        background: 'rgba(0,0,0,0.55)',
-      }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-5 bg-black/55"
       onClick={!isPending ? onCancel : undefined}
     >
-      <div
-        style={{
-          background: 'var(--paper-surface-hi)',
-          border: '1px solid var(--paper-border-bold)',
-          boxShadow: '6px 6px 0 rgba(0,0,0,0.15)',
-          padding: '24px',
-          width: '100%',
-          maxWidth: '320px',
-        }}
-        onClick={e => e.stopPropagation()}
-      >
-        <h2 style={{
-          fontFamily: 'var(--font-display)',
-          fontSize: '20px',
-          letterSpacing: '0.06em',
-          color: 'var(--paper-danger)',
-          marginBottom: '8px',
-          textTransform: 'uppercase',
-        }}>
-          Delete file?
-        </h2>
-        <p style={{
-          fontFamily: 'var(--font-ui)',
-          fontSize: '13px',
-          color: 'var(--paper-muted)',
-          lineHeight: 1.6,
-          marginBottom: '20px',
-        }}>
-          <strong style={{ color: 'var(--paper-text)', fontWeight: 500 }}>{entry.name}</strong>
+      <GlassCard className="p-6 w-full max-w-xs" onClick={e => e.stopPropagation()}>
+        <h2 className="font-ui text-lg font-semibold text-danger mb-2">Delete file?</h2>
+        <p className="font-ui text-[13px] text-muted leading-relaxed mb-5">
+          <strong className="text-ink font-medium">{entry.name}</strong>
           {' '}will be permanently removed. This cannot be undone.
         </p>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div className="flex flex-col gap-2">
           <button
             type="button"
             onClick={onConfirm}
             disabled={isPending}
-            onMouseEnter={() => setDeleteHovered(true)}
-            onMouseLeave={() => setDeleteHovered(false)}
-            style={{
-              width: '100%',
-              padding: '10px 16px',
-              fontFamily: 'var(--font-display)',
-              fontSize: '15px',
-              letterSpacing: '0.08em',
-              textTransform: 'uppercase',
-              background: 'var(--paper-danger)',
-              border: 'none',
-              color: 'white',
-              cursor: isPending ? 'not-allowed' : 'pointer',
-              opacity: isPending ? 0.5 : deleteHovered ? 0.88 : 1,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-            }}
+            className="w-full px-4 py-2.5 rounded-full font-ui text-sm font-semibold bg-danger text-white border-none cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
           >
             {isPending && (
-              <span style={{
-                width: '12px',
-                height: '12px',
-                borderRadius: '50%',
-                border: '2px solid rgba(255,255,255,0.4)',
-                borderTopColor: 'white',
-                animation: 'spin 0.6s linear infinite',
-                display: 'inline-block',
-              }} />
+              <span className="spinner inline-block w-3 h-3 rounded-full border-2 border-white/40 border-t-white" />
             )}
             Delete
           </button>
@@ -108,24 +48,13 @@ export const DeleteConfirmDialog = ({ entry, isPending, onConfirm, onCancel }: D
             type="button"
             onClick={onCancel}
             disabled={isPending}
-            style={{
-              width: '100%',
-              padding: '10px 16px',
-              fontFamily: 'var(--font-ui)',
-              fontSize: '13px',
-              fontWeight: 500,
-              background: 'transparent',
-              border: '2px solid var(--paper-border-bold)',
-              color: 'var(--paper-text)',
-              cursor: isPending ? 'not-allowed' : 'pointer',
-              opacity: isPending ? 0.5 : 1,
-            }}
+            className="w-full px-4 py-2.5 rounded-full font-ui text-[13px] font-medium bg-transparent border border-glass text-ink cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 hover:bg-surface-hi transition-colors"
           >
             Cancel
           </button>
         </div>
-      </div>
+      </GlassCard>
     </div>,
-    document.body
+    document.body,
   );
 };
