@@ -187,6 +187,33 @@ func escapeLike(s string) string {
 	return r.Replace(s)
 }
 
+// FileNameSize is a minimal projection for file-type aggregation.
+type FileNameSize struct {
+	Name string
+	Size int64
+}
+
+// FileNameSizes returns name and size for every regular file (no directories).
+// Extension/category aggregation happens in Go: SQLite has no last-index-of,
+// making extension extraction in SQL unreadable.
+func (s *Store) FileNameSizes(ctx context.Context) ([]FileNameSize, error) {
+	rows, err := s.db.QueryContext(ctx, `SELECT name, size FROM files WHERE is_dir = 0`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var out []FileNameSize
+	for rows.Next() {
+		var f FileNameSize
+		if err := rows.Scan(&f.Name, &f.Size); err != nil {
+			return nil, err
+		}
+		out = append(out, f)
+	}
+	return out, rows.Err()
+}
+
 // SearchFiles returns files matching the given filters anywhere in the tree,
 // excluding the managed-root row itself. Results are ordered directories
 // first, then by name. MinSize > 0 implies files only (directory sizes are
