@@ -1,8 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import * as downloadsHook from '../queries/useDownloads';
 import type { DownloadJob } from '../downloads.types';
+import * as downloadsHook from '../queries/useDownloads';
 
 import { DownloadsList } from './DownloadsList';
 

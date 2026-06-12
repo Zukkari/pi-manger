@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 
 import { fetchDownloads } from '../api/downloads';
 import type { DownloadJob } from '../downloads.types';
+
 import { QueryKeys } from './queryKeys';
 
 const POLL_INTERVAL_MS = 1500;
