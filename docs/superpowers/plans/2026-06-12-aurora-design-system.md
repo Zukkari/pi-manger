@@ -16,6 +16,11 @@
 - The `features/largest-files/` frontend module is removed in THIS phase (Task 10), not phase 3. Reason: phase 1 deletes the `--paper-*` tokens it depends on; restyling a component scheduled for deletion violates YAGNI. The dashboard goes without a disk-composition widget until the treemap lands in phase 3. The backend top-files endpoint is removed in phase 3 alongside the new directories/usage endpoint.
 - Phase 2 (browser UX) and phase 3 (widgets) get their own plans, written after this phase merges.
 
+**Review amendments (from Task 2 code-quality review — these supersede the code blocks below where they conflict):**
+- The `prefers-reduced-motion` guard covers `body::before, .live-dot, .skeleton, .row-enter, .spinner`, and index.css defines `.spinner { animation: spin 0.6s linear infinite; }`.
+- `--dim` darkened for contrast: light `#8593b8`, dark `#66749f`. `--dim` is decorative-only (timestamps, separators); 13px informational empty-state copy ("No files found in this location.", "No downloads yet.", "No subfolders here.") uses `text-muted` instead of `text-dim`.
+- Task 8 DeleteConfirmDialog: the pending spinner uses `className="spinner"` instead of an inline `animation` style, and the modal overlay drops `backdrop-blur-sm` (nested backdrop-filters compound; GlassCard already blurs).
+
 **Working conventions for every task:**
 - All commands run from `frontend/` unless stated otherwise.
 - Run tests with `npx vitest run <path>` (non-watch).
