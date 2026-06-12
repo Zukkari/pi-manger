@@ -28,6 +28,18 @@ func (m *mockStore) DeleteMissing(_ context.Context, paths []string) error {
 	return nil
 }
 
+func (m *mockStore) SnapshotFiles(_ context.Context) (map[string]store.SnapshotEntry, error) {
+	return map[string]store.SnapshotEntry{}, nil
+}
+
+func (m *mockStore) RecordChanges(_ context.Context, _ []store.Change) error {
+	return nil
+}
+
+func (m *mockStore) PruneChanges(_ context.Context, _ int64) error {
+	return nil
+}
+
 func TestSync_UpsertsRootDirectory(t *testing.T) {
 	root := t.TempDir()
 	ms := &mockStore{}
@@ -160,6 +172,135 @@ func TestSync_ReturnsErrorOnCancelledContext(t *testing.T) {
 	err := scanner.Sync(ctx, root, ms)
 	if err == nil {
 		t.Fatal("expected error for cancelled context, got nil")
+	}
+}
+
+func openScannerStore(t *testing.T) *store.Store {
+	t.Helper()
+	s, err := store.Open(filepath.Join(t.TempDir(), "test.db"))
+	if err != nil {
+		t.Fatalf("store.Open: %v", err)
+	}
+	t.Cleanup(func() { s.Close() })
+	return s
+}
+
+func TestSync_BootstrapSyncRecordsNoChanges(t *testing.T) {
+	root := t.TempDir()
+	if err := os.WriteFile(filepath.Join(root, "fileA.txt"), []byte("aa"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	s := openScannerStore(t)
+	if err := scanner.Sync(context.Background(), root, s); err != nil {
+		t.Fatalf("Sync: %v", err)
+	}
+
+	changes, err := s.ListChanges(context.Background(), 100)
+	if err != nil {
+		t.Fatalf("ListChanges: %v", err)
+	}
+	if len(changes) != 0 {
+		t.Fatalf("bootstrap sync must record 0 changes, got %d: %+v", len(changes), changes)
+	}
+}
+
+func TestSync_RecordsAddedRemovedAndGrownChanges(t *testing.T) {
+	root := t.TempDir()
+	fileA := filepath.Join(root, "fileA.txt")
+	fileB := filepath.Join(root, "fileB.txt")
+
+	// (a) bootstrap: fileA with content "aa" (2 bytes).
+	if err := os.WriteFile(fileA, []byte("aa"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	s := openScannerStore(t)
+	if err := scanner.Sync(context.Background(), root, s); err != nil {
+		t.Fatalf("Sync (bootstrap): %v", err)
+	}
+	changes, err := s.ListChanges(context.Background(), 100)
+	if err != nil {
+		t.Fatalf("ListChanges after bootstrap: %v", err)
+	}
+	if len(changes) != 0 {
+		t.Fatalf("bootstrap must produce 0 changes, got %d", len(changes))
+	}
+
+	// (b) add fileB (3 bytes) and grow fileA to "aaaa" (4 bytes, delta +2).
+	if err := os.WriteFile(fileB, []byte("bbb"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(fileA, []byte("aaaa"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := scanner.Sync(context.Background(), root, s); err != nil {
+		t.Fatalf("Sync (second): %v", err)
+	}
+
+	changes, err = s.ListChanges(context.Background(), 100)
+	if err != nil {
+		t.Fatalf("ListChanges after second sync: %v", err)
+	}
+
+	// Expect exactly: one added row for fileB (+3), one grown row for fileA (+2).
+	// Directories must not produce grown/shrunk rows.
+	var addedB, grownA bool
+	for _, c := range changes {
+		if c.Path == fileB && c.ChangeType == "added" {
+			if c.BytesDelta != 3 {
+				t.Errorf("added fileB: expected BytesDelta 3, got %d", c.BytesDelta)
+			}
+			addedB = true
+		}
+		if c.Path == fileA && c.ChangeType == "grown" {
+			if c.BytesDelta != 2 {
+				t.Errorf("grown fileA: expected BytesDelta 2, got %d", c.BytesDelta)
+			}
+			grownA = true
+		}
+		// Directories must never produce grown/shrunk rows.
+		if c.Path == root && (c.ChangeType == "grown" || c.ChangeType == "shrunk") {
+			t.Errorf("unexpected grown/shrunk row for directory %q", c.Path)
+		}
+	}
+	if !addedB {
+		t.Errorf("expected an added row for fileB, changes: %+v", changes)
+	}
+	if !grownA {
+		t.Errorf("expected a grown row for fileA, changes: %+v", changes)
+	}
+	// No extra change types (root dir must not appear as grown/shrunk).
+	for _, c := range changes {
+		if c.Path != fileA && c.Path != fileB {
+			t.Errorf("unexpected change row for path %q (type %q)", c.Path, c.ChangeType)
+		}
+	}
+
+	// (c) remove fileB → expect a removed row with negative BytesDelta.
+	if err := os.Remove(fileB); err != nil {
+		t.Fatal(err)
+	}
+	if err := scanner.Sync(context.Background(), root, s); err != nil {
+		t.Fatalf("Sync (third): %v", err)
+	}
+
+	// ListChanges returns newest first; third-sync rows appear before second-sync rows.
+	all, err := s.ListChanges(context.Background(), 100)
+	if err != nil {
+		t.Fatalf("ListChanges after third sync: %v", err)
+	}
+	var removedB bool
+	for _, c := range all {
+		if c.Path == fileB && c.ChangeType == "removed" {
+			if c.BytesDelta != -3 {
+				t.Errorf("removed fileB: expected BytesDelta -3, got %d", c.BytesDelta)
+			}
+			removedB = true
+			break
+		}
+	}
+	if !removedB {
+		t.Errorf("expected a removed row for fileB after third sync, all changes: %+v", all)
 	}
 }
 
