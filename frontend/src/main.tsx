@@ -9,12 +9,15 @@ import '@fontsource/iosevka/500.css';
 
 import { QueryProvider } from './app/providers/QueryProvider';
 import { router } from './app/router';
+import { ThemeProvider } from './shared/theme/ThemeProvider';
 import './index.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <QueryProvider>
-      <RouterProvider router={router} />
-    </QueryProvider>
+    <ThemeProvider>
+      <QueryProvider>
+        <RouterProvider router={router} />
+      </QueryProvider>
+    </ThemeProvider>
   </StrictMode>,
 );
