@@ -63,7 +63,17 @@ export const FileBrowserWidget = () => {
   const { mutate: deleteFile, isPending: isDeleting } = useDeleteFile(parent_id);
   const bulkDelete = useBulkDeleteFiles(parent_id);
   const search = useFileSearch(debouncedQuery);
-  const isSearching = debouncedQuery.trim().length >= MIN_QUERY_LENGTH;
+  const isSearching =
+    searchInput.trim().length >= MIN_QUERY_LENGTH &&
+    debouncedQuery.trim().length >= MIN_QUERY_LENGTH;
+
+  // A selection must never outlive the folder it was made in (bulk delete would
+  // act on rows the user can no longer see), nor stay armed behind search results.
+  useEffect(() => {
+    setSelecting(false);
+    setSelectedIds(new Set());
+    setBulkError(null);
+  }, [parent_id, isSearching]);
 
   useEffect(() => {
     if (parent_id !== undefined) return;

@@ -5,9 +5,11 @@ import { QueryKeys } from './queryKeys';
 
 export const MIN_QUERY_LENGTH = 2;
 
-export const useFileSearch = (query: string) =>
-  useQuery({
-    queryKey: [QueryKeys.FILE_SEARCH, query],
-    queryFn: () => searchFiles({ q: query }),
-    enabled: query.trim().length >= MIN_QUERY_LENGTH,
+export const useFileSearch = (query: string) => {
+  const trimmed = query.trim();
+  return useQuery({
+    queryKey: [QueryKeys.FILE_SEARCH, trimmed],
+    queryFn: () => searchFiles({ q: trimmed }),
+    enabled: trimmed.length >= MIN_QUERY_LENGTH,
   });
+};

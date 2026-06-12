@@ -276,6 +276,34 @@ describe('FileBrowserWidget', () => {
     expect(screen.queryByText(/selected/i)).not.toBeInTheDocument();
   });
 
+  it('navigating to another folder clears the selection', async () => {
+    const navigate = vi.fn();
+    mockUseSearch.mockReturnValue({ parent_id: undefined });
+    mockUseNavigate.mockReturnValue(navigate);
+    mockUseFiles.mockReturnValue({ data: rootEntries, isLoading: false, isError: false, refetch: vi.fn() } as unknown as ReturnType<typeof filesHook.useFiles>);
+    mockUseDeleteFile.mockReturnValue({ mutate: vi.fn(), isPending: false } as unknown as ReturnType<typeof deleteFileHook.useDeleteFile>);
+
+    const { rerender } = render(<FileBrowserWidget />);
+
+    // Enter selection mode and select a row
+    await userEvent.click(screen.getByRole('button', { name: /^select$/i }));
+    const checkboxes = screen.getAllByRole('checkbox');
+    await userEvent.click(checkboxes[0]);
+    expect(screen.getByText(/1 selected/i)).toBeInTheDocument();
+
+    // Simulate folder navigation: useSearch now returns a different parent_id
+    mockUseSearch.mockReturnValue({ parent_id: 1 });
+    const childEntries = [
+      { id: 3, parent_id: 1, name: 'jan.tar.gz', path: '/backups/jan.tar.gz', size: 1024, is_dir: false, modified_at: 0 },
+    ];
+    mockUseFiles.mockReturnValue({ data: childEntries, isLoading: false, isError: false, refetch: vi.fn() } as unknown as ReturnType<typeof filesHook.useFiles>);
+    rerender(<FileBrowserWidget />);
+
+    // Selection bar and checkboxes must be gone
+    expect(screen.queryByText(/selected/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
+  });
+
   it('partial failure keeps failed rows selected with an error message', async () => {
     // id=2 (config.yaml) fails; id=1 (backups) succeeds
     const mutate = vi.fn((_ids: number[], opts?: { onSuccess?: (result: { failedIds: number[] }) => void }) => {
