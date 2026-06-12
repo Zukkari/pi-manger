@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"pi-manager/internal/download"
 	"pi-manager/internal/handler"
 	"pi-manager/internal/scanner"
 	"pi-manager/internal/store"
@@ -74,11 +75,14 @@ func main() {
 		}
 	}()
 
+	downloads := download.NewManager(managedDir, &http.Client{})
+
 	mux := http.NewServeMux()
 	mux.Handle("/api/disk", handler.NewDiskHandler(managedDir))
 	mux.Handle("/api/files/top", handler.NewTopFilesHandler(db))
 	mux.Handle("/api/files", handler.NewFilesHandler(db))
 	mux.Handle("/api/files/", handler.NewDeleteFileHandler(db))
+	mux.Handle("/api/downloads", handler.NewDownloadsHandler(downloads))
 
 	addr := ":" + port
 	log.Printf("pi-manager starting on %s (MANAGED_DIR=%s, DB_PATH=%s)", addr, managedDir, dbPath)

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -108,5 +108,32 @@ describe('FileRow', () => {
     await userEvent.click(screen.getByRole('button', { name: /more options/i }));
     expect(screen.getByRole('menu')).toHaveStyle({ bottom: '100%' });
     expect(screen.getByRole('menu')).not.toHaveStyle({ top: '100%' });
+  });
+
+  it('closes the menu on a pointerdown outside it', async () => {
+    render(<FileRow entry={file} onClick={vi.fn()} onDelete={vi.fn()} />);
+    await userEvent.click(screen.getByRole('button', { name: /more options/i }));
+    expect(screen.getByRole('menu')).toBeInTheDocument();
+
+    fireEvent.pointerDown(document.body);
+
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+  });
+
+  // Regression: on touch (notably Firefox for Android) the dismiss listener fires before the
+  // menu item's click. Dismissing on pointerdown rather than mousedown keeps a pointerdown that
+  // lands on the Delete item from unmounting the menu before its click — which opens the delete
+  // modal — can be delivered.
+  it('keeps the menu open when a pointerdown lands on the Delete item', async () => {
+    const onDelete = vi.fn();
+    render(<FileRow entry={file} onClick={vi.fn()} onDelete={onDelete} />);
+    await userEvent.click(screen.getByRole('button', { name: /more options/i }));
+    const deleteItem = screen.getByRole('menuitem', { name: /delete/i });
+
+    fireEvent.pointerDown(deleteItem);
+    expect(screen.getByRole('menu')).toBeInTheDocument();
+
+    await userEvent.click(deleteItem);
+    expect(onDelete).toHaveBeenCalledWith(file);
   });
 });

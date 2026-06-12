@@ -59,7 +59,10 @@ export const FileRow = ({ isParent, entry, onClick, onParentClick, onDelete, ind
 
   useEffect(() => {
     if (!menuOpen) return;
-    const handleClickOutside = (e: MouseEvent) => {
+    // Use pointerdown rather than mousedown: Firefox for Android fires pointer events
+    // natively on the touched element, whereas its synthetic mouse events are delayed and
+    // can mis-target, closing the menu before the "Delete" item's click is delivered.
+    const handleClickOutside = (e: PointerEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setMenuOpen(false);
       }
@@ -67,10 +70,10 @@ export const FileRow = ({ isParent, entry, onClick, onParentClick, onDelete, ind
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setMenuOpen(false);
     };
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('pointerdown', handleClickOutside);
     document.addEventListener('keydown', handleKeyDown);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('pointerdown', handleClickOutside);
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [menuOpen]);
