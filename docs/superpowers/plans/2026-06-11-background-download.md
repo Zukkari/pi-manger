@@ -308,12 +308,16 @@ func validateURL(raw string) (*url.URL, error) {
 	return u, nil
 }
 
-// resolveDir joins a user-supplied relative dir onto managedDir, rejecting any
-// path that escapes managedDir via "..". A leading slash is treated as
-// root-relative (cleaned against "/"), so it cannot escape.
+// resolveDir joins a user-supplied dir onto managedDir, rejecting any path
+// that escapes managedDir via "..". A leading slash is stripped and treated as
+// root-relative so that e.g. "/etc" resolves to managedDir/etc.
 func resolveDir(managedDir, dir string) (string, error) {
-	cleaned := filepath.Clean("/" + dir)
-	full := filepath.Join(managedDir, cleaned)
+	// Strip a leading slash so the caller cannot anchor to the filesystem root,
+	// but preserve ".." components so genuine escapes are rejected (not silently
+	// clamped). filepath.Join normalises the result and the Rel check below
+	// catches anything that lands outside managedDir.
+	trimmed := strings.TrimLeft(dir, string(filepath.Separator))
+	full := filepath.Join(managedDir, trimmed)
 	rel, err := filepath.Rel(managedDir, full)
 	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
 		return "", errBadDir
