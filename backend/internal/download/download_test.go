@@ -123,6 +123,32 @@ func TestManagerLeavesPartFileOnFailure(t *testing.T) {
 	}
 }
 
+func TestManagerSanitizesNameOverrideTraversal(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("data"))
+	}))
+	defer srv.Close()
+	root := t.TempDir()
+	m := NewManager(root, srv.Client())
+
+	// A malicious filename override must not escape the destination directory.
+	job, err := m.Start(srv.URL+"/f", "sub", "../../escape.bin")
+	if err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+	done := waitFor(t, m, job.ID, StatusCompleted)
+	if done.Name != "escape.bin" {
+		t.Errorf("name = %q, want escape.bin (basename only)", done.Name)
+	}
+	if _, err := os.Stat(filepath.Join(root, "sub", "escape.bin")); err != nil {
+		t.Errorf("file should land inside the destination: %v", err)
+	}
+	// Nothing must be written outside the managed root.
+	if _, err := os.Stat(filepath.Join(filepath.Dir(root), "escape.bin")); !os.IsNotExist(err) {
+		t.Errorf("file escaped the managed root")
+	}
+}
+
 func TestManagerStartRejectsBadInput(t *testing.T) {
 	m := NewManager(t.TempDir(), http.DefaultClient)
 	if _, err := m.Start("ftp://x/y", "d", ""); err == nil {

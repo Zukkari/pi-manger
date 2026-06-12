@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -168,6 +169,13 @@ func (m *Manager) run(id string, u *url.URL, dir, override string) {
 		name = filenameFromContentDisposition(resp.Header.Get("Content-Disposition"))
 	}
 	if name == "" {
+		name = "download"
+	}
+	// Defense in depth: reduce any source — especially the user-supplied
+	// override — to a single path element so a name like "../../etc/evil"
+	// cannot escape destDir. resolveDir guards the dir; this guards the name.
+	name = filepath.Base(strings.TrimSpace(name))
+	if name == "." || name == ".." {
 		name = "download"
 	}
 	name = uniqueName(destDir, name)
