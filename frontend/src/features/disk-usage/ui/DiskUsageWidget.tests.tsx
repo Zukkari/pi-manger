@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
 import * as diskUsageHook from '../queries/useDiskUsage';
@@ -43,6 +44,23 @@ describe('DiskUsageWidget', () => {
     render(<DiskUsageWidget />);
 
     expect(screen.getByText(/failed to load disk usage/i)).toBeInTheDocument();
+  });
+
+  it('calls refetch when the retry button is clicked in error state', async () => {
+    const refetch = vi.fn();
+    const user = userEvent.setup();
+    mockUseDiskUsage.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+      refetch,
+    } as unknown as ReturnType<typeof diskUsageHook.useDiskUsage>);
+
+    render(<DiskUsageWidget />);
+
+    await user.click(screen.getByRole('button', { name: /retry/i }));
+
+    expect(refetch).toHaveBeenCalledOnce();
   });
 
   it('renders DiskUsageBar with data on success', () => {
