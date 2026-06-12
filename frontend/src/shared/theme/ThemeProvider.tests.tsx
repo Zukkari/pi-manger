@@ -19,6 +19,7 @@ const stubMatchMedia = (prefersDark: boolean) => {
   return { fireChange: (matches: boolean) => listeners.forEach(cb => cb({ matches })) };
 };
 
+// eslint-disable-next-line react-refresh/only-export-components -- test helper, not a hot-reloaded module
 const Probe = () => {
   const { preference, resolvedMode, cyclePreference } = useTheme();
   return (

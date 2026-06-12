@@ -9,6 +9,7 @@ vi.mock('@tanstack/react-router', () => ({
   Outlet: () => <div />,
 }));
 
+// eslint-disable-next-line import/order -- imports after vi.mock hoisting must come here
 import { ThemeProvider } from '@/shared/theme/ThemeProvider';
 import { LayoutMain } from './LayoutMain';
 
