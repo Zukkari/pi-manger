@@ -170,3 +170,60 @@ func (s *Store) GetFile(ctx context.Context, id int64) (File, error) {
 func (s *Store) DeleteFile(ctx context.Context, id int64) error {
 	return s.queries.DeleteFile(ctx, id)
 }
+
+// SearchFilesParams filters for SearchFiles. Zero values mean "no filter":
+// empty Query matches every name, empty Extension skips the extension filter,
+// MinSize 0 skips the size filter. Limit must be > 0.
+type SearchFilesParams struct {
+	Query     string
+	Extension string
+	MinSize   int64
+	Limit     int64
+}
+
+// escapeLike escapes LIKE wildcards so user input matches literally.
+func escapeLike(s string) string {
+	r := strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`)
+	return r.Replace(s)
+}
+
+// SearchFiles returns files matching the given filters anywhere in the tree,
+// excluding the managed-root row itself. Results are ordered directories
+// first, then by name. MinSize > 0 implies files only (directory sizes are
+// filesystem block sizes, not content sizes — matching them is meaningless).
+func (s *Store) SearchFiles(ctx context.Context, p SearchFilesParams) ([]File, error) {
+	query := `SELECT id, parent_id, path, name, size, is_dir, modified_at, synced_at
+FROM files WHERE parent_id IS NOT NULL`
+	args := []any{}
+
+	if p.Query != "" {
+		query += ` AND name LIKE ? ESCAPE '\'`
+		args = append(args, "%"+escapeLike(p.Query)+"%")
+	}
+	if p.Extension != "" {
+		query += ` AND lower(name) LIKE ? ESCAPE '\'`
+		args = append(args, "%."+escapeLike(strings.ToLower(p.Extension)))
+	}
+	if p.MinSize > 0 {
+		query += ` AND is_dir = 0 AND size >= ?`
+		args = append(args, p.MinSize)
+	}
+	query += ` ORDER BY is_dir DESC, name ASC LIMIT ?`
+	args = append(args, p.Limit)
+
+	rows, err := s.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var files []File
+	for rows.Next() {
+		var f File
+		if err := rows.Scan(&f.ID, &f.ParentID, &f.Path, &f.Name, &f.Size, &f.IsDir, &f.ModifiedAt, &f.SyncedAt); err != nil {
+			return nil, err
+		}
+		files = append(files, f)
+	}
+	return files, rows.Err()
+}
