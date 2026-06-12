@@ -1,6 +1,8 @@
-import type { CSSProperties } from 'react';
 import { Fragment, useEffect, useState } from 'react';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
+
+import { GlassCard } from '@/shared/ui/GlassCard';
+import { WidgetError } from '@/shared/ui/WidgetError';
 
 import type { FileEntry } from '../files.types';
 import { useDeleteFile } from '../queries/useDeleteFile';
@@ -20,35 +22,18 @@ const deriveFolderName = (children: FileEntry[]): string | undefined => {
 };
 
 const FileSkeleton = () => (
-  <div
-    role="status"
-    aria-label="Loading files"
-    style={{
-      background: 'var(--paper-surface)',
-      border: '1px solid var(--paper-border)',
-      boxShadow: '3px 3px 0 var(--paper-border-bold)',
-    }}
-  >
+  <GlassCard role="status" aria-label="Loading files" className="overflow-hidden">
     {[0, 1, 2, 3].map(i => (
-      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', borderBottom: '1px solid var(--paper-border)' }}>
-        <div className="paper-skeleton" style={{ width: '28px', height: '28px', flexShrink: 0 }} />
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          <div className="paper-skeleton" style={{ width: '50%', height: '10px' }} />
-          <div className="paper-skeleton" style={{ width: '30%', height: '8px' }} />
+      <div key={i} className="flex items-center gap-3 px-3.5 py-2.5 border-b border-glass">
+        <div className="skeleton w-7 h-7 shrink-0" />
+        <div className="flex flex-col gap-1.5 flex-1">
+          <div className="skeleton h-2.5 w-1/2" />
+          <div className="skeleton h-2 w-[30%]" />
         </div>
       </div>
     ))}
-  </div>
+  </GlassCard>
 );
-
-const sectionLabelStyle: CSSProperties = {
-  fontFamily: 'var(--font-display)',
-  fontSize: '11px',
-  letterSpacing: '0.2em',
-  textTransform: 'uppercase',
-  color: 'var(--paper-muted)',
-  marginBottom: '10px',
-};
 
 export const FileBrowserWidget = () => {
   const { parent_id } = useSearch({ from: '/files' });
@@ -58,7 +43,7 @@ export const FileBrowserWidget = () => {
   const [stack, setStack] = useState<BreadcrumbEntry[]>([{ id: undefined, name: 'Root' }]);
   const [pendingDelete, setPendingDelete] = useState<FileEntry | null>(null);
 
-  const { data, isLoading, isError } = useFiles(parent_id);
+  const { data, isLoading, isError, refetch } = useFiles(parent_id);
   const { mutate: deleteFile, isPending: isDeleting } = useDeleteFile(parent_id);
 
   useEffect(() => {
@@ -73,19 +58,7 @@ export const FileBrowserWidget = () => {
   if (isLoading) return <FileSkeleton />;
 
   if (isError || !data) {
-    return (
-      <div style={{
-        background: 'var(--paper-surface)',
-        border: '1px solid var(--paper-border)',
-        boxShadow: '3px 3px 0 var(--paper-border-bold)',
-        padding: '24px',
-        fontFamily: 'var(--font-ui)',
-        fontSize: '13px',
-        color: 'var(--paper-danger)',
-      }}>
-        Failed to load files. Is the API running?
-      </div>
-    );
+    return <WidgetError message="Failed to load files. Is the API running?" onRetry={() => refetch()} />;
   }
 
   const isInsideFolder = parent_id !== undefined;
@@ -126,23 +99,23 @@ export const FileBrowserWidget = () => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-      <div style={sectionLabelStyle}>Files</div>
+    <div className="flex flex-col gap-3">
+      <div className="font-data text-[11px] uppercase tracking-[0.2em] text-muted mb-2.5">Files</div>
 
-      <nav aria-label="breadcrumb" style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' as const }}>
+      <nav aria-label="breadcrumb" className="flex items-center gap-1 flex-wrap">
         {effectiveStack.map((crumb, i) => {
           const isLast = i === effectiveStack.length - 1;
           return (
-            <span key={crumb.id ?? `root-${i}`} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <span key={crumb.id ?? `root-${i}`} className="flex items-center gap-1">
               {i > 0 && (
-                <span style={{ fontFamily: 'var(--font-data)', fontSize: '10px', color: 'var(--paper-dim)' }}>›</span>
+                <span className="font-data text-[10px] text-dim">›</span>
               )}
               {i === 0 && !isLast ? (
                 <Link
                   to="/files"
                   search={{ parent_id: undefined }}
                   onClick={() => setStack([{ id: undefined, name: rootName }])}
-                  className="paper-breadcrumb-link"
+                  className="breadcrumb-link"
                 >
                   {crumb.name}
                 </Link>
@@ -151,17 +124,12 @@ export const FileBrowserWidget = () => {
                   to="/files"
                   search={{ parent_id: crumb.id }}
                   onClick={() => setStack(prev => prev.slice(0, i + 1))}
-                  className="paper-breadcrumb-link"
+                  className="breadcrumb-link"
                 >
                   {crumb.name}
                 </Link>
               ) : (
-                <span style={{
-                  fontFamily: 'var(--font-data)',
-                  fontSize: '12px',
-                  color: 'var(--paper-text)',
-                  fontWeight: 500,
-                }}>
+                <span className="font-data text-xs font-medium text-ink">
                   {crumb.name}
                 </span>
               )}
@@ -169,37 +137,26 @@ export const FileBrowserWidget = () => {
           );
         })}
         {effectiveStack.length > 0 && (
-          <span style={{ fontFamily: 'var(--font-data)', fontSize: '10px', color: 'var(--paper-dim)', marginLeft: 'auto' }}>
+          <span className="font-data text-[10px] text-dim ml-auto">
             {data.length} {data.length === 1 ? 'item' : 'items'}
           </span>
         )}
       </nav>
 
-      <div style={{
-        background: 'var(--paper-surface)',
-        border: '1px solid var(--paper-border)',
-        boxShadow: '3px 3px 0 var(--paper-border-bold)',
-        overflow: 'hidden',
-      }}>
-        {isInsideFolder && <FileRow isParent onParentClick={handleNavigateUp} />}
+      <GlassCard className="overflow-hidden">
+        {isInsideFolder && (
+          <>
+            <FileRow isParent onParentClick={handleNavigateUp} />
+            {data.length > 0 && <div className="border-t border-glass" />}
+          </>
+        )}
 
         {data.length === 0 && (
-          <div style={{ padding: '48px 24px', textAlign: 'center' }}>
-            <div style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: '18px',
-              letterSpacing: '0.08em',
-              color: 'var(--paper-muted)',
-              marginBottom: '6px',
-              textTransform: 'uppercase' as const,
-            }}>
-              EMPTY DIRECTORY
+          <div className="px-6 py-12 text-center">
+            <div className="font-ui text-base font-semibold tracking-wide text-muted mb-1.5">
+              Empty directory
             </div>
-            <div style={{
-              fontFamily: 'var(--font-ui)',
-              fontSize: '13px',
-              color: 'var(--paper-dim)',
-            }}>
+            <div className="font-ui text-[13px] text-muted">
               No files found in this location.
             </div>
           </div>
@@ -207,7 +164,7 @@ export const FileBrowserWidget = () => {
 
         {data.map((entry, i) => (
           <Fragment key={entry.id}>
-            {i > 0 && <div style={{ borderTop: '1px solid var(--paper-border)' }} />}
+            {i > 0 && <div className="border-t border-glass" />}
             <FileRow
               entry={entry}
               index={i}
@@ -217,7 +174,7 @@ export const FileBrowserWidget = () => {
             />
           </Fragment>
         ))}
-      </div>
+      </GlassCard>
 
       {pendingDelete && (
         <DeleteConfirmDialog

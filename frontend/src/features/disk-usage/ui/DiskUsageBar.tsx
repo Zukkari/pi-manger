@@ -1,3 +1,5 @@
+import { GlassCard } from '@/shared/ui/GlassCard';
+
 import type { DiskUsageBarProps } from './DiskUsageBar.types';
 
 const formatBytes = (bytes: number): string => {
@@ -15,10 +17,10 @@ const getBarState = (percent: number): BarState => {
   return 'safe';
 };
 
-const BAR_COLORS: Record<BarState, string> = {
-  safe:   'var(--paper-accent)',
-  warn:   'var(--paper-warn)',
-  danger: 'var(--paper-danger)',
+const BAR_FILLS: Record<BarState, string> = {
+  safe:   'linear-gradient(90deg, var(--accent), var(--accent-2))',
+  warn:   'var(--warn)',
+  danger: 'var(--danger)',
 };
 
 export const DiskUsageBar = ({ data }: DiskUsageBarProps) => {
@@ -27,98 +29,50 @@ export const DiskUsageBar = ({ data }: DiskUsageBarProps) => {
   const barState = getBarState(used_percent);
 
   return (
-    <div style={{
-      background: 'var(--paper-surface)',
-      border: '1px solid var(--paper-border)',
-      boxShadow: '3px 3px 0 var(--paper-border-bold)',
-      padding: '24px',
-      width: '100%',
-    }}>
+    <GlassCard className="p-6 w-full">
       {/* Hero row: percentage + path */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '20px' }}>
+      <div className="flex items-start justify-between mb-5">
         <div>
-          <div style={{
-            fontFamily: 'var(--font-display)',
-            fontSize: '88px',
-            lineHeight: 1,
-            letterSpacing: '-0.04em',
-            color: 'var(--paper-text)',
-          }}>
+          <div className="font-data text-7xl leading-none tracking-tight text-ink">
             {roundedPercent}%
           </div>
-          <div style={{
-            fontFamily: 'var(--font-data)',
-            fontSize: '11px',
-            color: 'var(--paper-muted)',
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
-            marginTop: '2px',
-          }}>
+          <div className="font-data text-[11px] uppercase tracking-widest text-muted mt-1">
             used
           </div>
         </div>
-        <div style={{ textAlign: 'right' }}>
-          <div style={{ fontFamily: 'var(--font-data)', fontSize: '11px', color: 'var(--paper-muted)' }}>
-            {path}
-          </div>
-        </div>
+        <div className="font-data text-[11px] text-muted text-right">{path}</div>
       </div>
 
       {/* Progress bar */}
-      <div style={{ height: '8px', background: 'rgba(0,0,0,0.08)', marginBottom: '16px' }}>
+      <div className="h-2 rounded-full mb-4 overflow-hidden" style={{ background: 'var(--track)' }}>
         <div
           role="progressbar"
           aria-valuenow={roundedPercent}
           aria-valuemin={0}
           aria-valuemax={100}
           data-state={barState}
-          style={{
-            height: '100%',
-            width: `${used_percent}%`,
-            background: BAR_COLORS[barState],
-            transition: 'width 1.2s cubic-bezier(0.22, 1, 0.36, 1)',
-          }}
+          className="h-full rounded-full transition-[width] duration-1000 ease-out"
+          style={{ width: `${used_percent}%`, background: BAR_FILLS[barState] }}
         />
       </div>
 
       {/* Stats row */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr 1fr',
-        gap: '1px',
-        background: 'var(--paper-border)',
-        border: '1px solid var(--paper-border)',
-      }}>
+      <div className="grid grid-cols-3 gap-2">
         {([
           { label: 'Used',  value: formatBytes(used_bytes),  testId: 'stat-used'  },
           { label: 'Free',  value: formatBytes(free_bytes),  testId: 'stat-free'  },
           { label: 'Total', value: formatBytes(total_bytes), testId: 'stat-total' },
         ] as const).map(({ label, value, testId }) => (
-          <div key={label} style={{ background: 'var(--paper-surface)', padding: '12px' }}>
-            <div style={{
-              fontFamily: 'var(--font-data)',
-              fontSize: '8px',
-              letterSpacing: '0.12em',
-              textTransform: 'uppercase',
-              color: 'var(--paper-muted)',
-              marginBottom: '3px',
-            }}>
+          <div key={label} className="rounded-xl border border-glass bg-surface-hi p-3">
+            <div className="font-data text-[8px] uppercase tracking-widest text-muted mb-1">
               {label}
             </div>
-            <div
-              data-testid={testId}
-              style={{
-                fontFamily: 'var(--font-data)',
-                fontSize: '14px',
-                fontWeight: 500,
-                color: 'var(--paper-text)',
-              }}
-            >
+            <div data-testid={testId} className="font-data text-sm font-medium text-ink">
               {value}
             </div>
           </div>
         ))}
       </div>
-    </div>
+    </GlassCard>
   );
 };

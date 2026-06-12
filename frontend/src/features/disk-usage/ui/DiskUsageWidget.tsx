@@ -1,58 +1,45 @@
+import { GlassCard } from '@/shared/ui/GlassCard';
+import { WidgetError } from '@/shared/ui/WidgetError';
+
 import { useDiskUsage } from '../queries/useDiskUsage';
 
 import { DiskUsageBar } from './DiskUsageBar';
 
 const DiskUsageSkeleton = () => (
-  <div
-    role="status"
-    aria-label="Loading disk usage"
-    style={{
-      background: 'var(--paper-surface)',
-      border: '1px solid var(--paper-border)',
-      boxShadow: '3px 3px 0 var(--paper-border-bold)',
-      padding: '24px',
-    }}
-  >
+  <GlassCard role="status" aria-label="Loading disk usage" className="p-6">
     {/* Percentage placeholder */}
-    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
+    <div className="flex justify-between mb-5">
       <div>
-        <div className="paper-skeleton" style={{ width: '120px', height: '72px', marginBottom: '8px' }} />
-        <div className="paper-skeleton" style={{ width: '40px', height: '10px' }} />
+        <div className="skeleton w-[120px] h-[72px] mb-2" />
+        <div className="skeleton w-10 h-2.5" />
       </div>
-      <div className="paper-skeleton" style={{ width: '80px', height: '14px' }} />
+      <div className="skeleton w-20 h-3.5" />
     </div>
     {/* Bar placeholder */}
-    <div className="paper-skeleton" style={{ height: '8px', marginBottom: '16px' }} />
+    <div className="skeleton h-2 mb-4" />
     {/* Stats placeholder */}
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1px', background: 'var(--paper-border)' }}>
+    <div className="grid grid-cols-3 gap-2">
       {[0, 1, 2].map(i => (
-        <div key={i} style={{ background: 'var(--paper-surface)', padding: '12px' }}>
-          <div className="paper-skeleton" style={{ width: '30px', height: '8px', marginBottom: '6px' }} />
-          <div className="paper-skeleton" style={{ width: '60px', height: '14px' }} />
+        <div key={i} className="rounded-xl border border-glass bg-surface-hi p-3">
+          <div className="skeleton w-8 h-2 mb-1.5" />
+          <div className="skeleton w-14 h-3.5" />
         </div>
       ))}
     </div>
-  </div>
+  </GlassCard>
 );
 
 export const DiskUsageWidget = () => {
-  const { data, isLoading, isError } = useDiskUsage();
+  const { data, isLoading, isError, refetch } = useDiskUsage();
 
   if (isLoading) return <DiskUsageSkeleton />;
 
   if (isError || !data) {
     return (
-      <div style={{
-        background: 'var(--paper-surface)',
-        border: '1px solid var(--paper-border)',
-        boxShadow: '3px 3px 0 var(--paper-border-bold)',
-        padding: '24px',
-        fontFamily: 'var(--font-ui)',
-        fontSize: '13px',
-        color: 'var(--paper-danger)',
-      }}>
-        Failed to load disk usage. Is the API running?
-      </div>
+      <WidgetError
+        message="Failed to load disk usage. Is the API running?"
+        onRetry={() => refetch()}
+      />
     );
   }
 

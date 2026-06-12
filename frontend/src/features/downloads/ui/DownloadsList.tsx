@@ -1,38 +1,25 @@
+import { GlassCard } from '@/shared/ui/GlassCard';
+
 import type { DownloadJob } from '../downloads.types';
 import { useDownloads } from '../queries/useDownloads';
-
-const CONTAINER_STYLE: React.CSSProperties = {
-  background: 'var(--paper-surface)',
-  border: '1px solid var(--paper-border)',
-  boxShadow: '3px 3px 0 var(--paper-border-bold)',
-  padding: '24px',
-};
-
-const HEADING_STYLE: React.CSSProperties = {
-  fontFamily: 'var(--font-display)',
-  letterSpacing: '0.06em',
-  textTransform: 'uppercase',
-  fontSize: '16px',
-  margin: '0 0 16px',
-};
 
 const percent = (job: DownloadJob): number =>
   job.total_bytes > 0 ? Math.min(100, Math.round((job.bytes_downloaded / job.total_bytes) * 100)) : 0;
 
-const STATUS_COLOR: Record<DownloadJob['status'], string> = {
-  queued: 'var(--paper-muted)',
-  downloading: 'var(--paper-muted)',
-  completed: 'var(--paper-safe)',
-  failed: 'var(--paper-danger)',
+const STATUS_CLASS: Record<DownloadJob['status'], string> = {
+  queued: 'text-muted',
+  downloading: 'text-muted',
+  completed: 'text-safe',
+  failed: 'text-danger',
 };
 
 const DownloadRow = ({ job }: { job: DownloadJob }) => (
-  <div style={{ marginBottom: '14px', fontFamily: 'var(--font-ui)', fontSize: '13px' }}>
-    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-      <span>{job.name || job.url}</span>
+  <div className="mb-3.5 font-ui text-[13px] text-ink">
+    <div className="flex justify-between">
+      <span className="overflow-hidden text-ellipsis whitespace-nowrap mr-3">{job.name || job.url}</span>
       {/* Show a percentage only when the server sent a Content-Length; otherwise
           fall back to the status word (the bar still renders, at 0% width). */}
-      <span style={{ color: STATUS_COLOR[job.status], fontFamily: 'var(--font-data)', fontSize: '11px' }}>
+      <span className={`font-data text-[11px] shrink-0 ${STATUS_CLASS[job.status]}`}>
         {job.status === 'downloading' && job.total_bytes > 0 ? `${percent(job)}%` : job.status}
       </span>
     </div>
@@ -42,13 +29,17 @@ const DownloadRow = ({ job }: { job: DownloadJob }) => (
         aria-valuenow={percent(job)}
         aria-valuemin={0}
         aria-valuemax={100}
-        style={{ height: '6px', background: 'var(--paper-border)', borderRadius: '3px', marginTop: '5px', overflow: 'hidden' }}
+        className="h-1.5 rounded-full mt-1.5 overflow-hidden"
+        style={{ background: 'var(--track)' }}
       >
-        <div style={{ height: '6px', width: `${percent(job)}%`, background: 'var(--paper-safe)', borderRadius: '3px' }} />
+        <div
+          className="h-full rounded-full"
+          style={{ width: `${percent(job)}%`, background: 'linear-gradient(90deg, var(--accent), var(--accent-2))' }}
+        />
       </div>
     )}
     {job.status === 'failed' && job.error && (
-      <div style={{ color: 'var(--paper-danger)', fontSize: '12px', marginTop: '4px' }}>{job.error}</div>
+      <div className="text-danger text-xs mt-1">{job.error}</div>
     )}
   </div>
 );
@@ -57,12 +48,12 @@ export const DownloadsList = () => {
   const { data, isLoading, isError } = useDownloads();
 
   return (
-    <div style={CONTAINER_STYLE}>
-      <h2 style={HEADING_STYLE}>Downloads</h2>
-      {isLoading && <div style={{ color: 'var(--paper-muted)', fontSize: '13px' }}>Loading…</div>}
-      {isError && <div style={{ color: 'var(--paper-danger)', fontSize: '13px' }}>Couldn&apos;t load downloads.</div>}
-      {data?.length === 0 && <div style={{ color: 'var(--paper-dim)', fontSize: '13px' }}>No downloads yet.</div>}
+    <GlassCard className="p-6">
+      <h2 className="font-ui text-sm font-semibold tracking-wide text-ink m-0 mb-4">Downloads</h2>
+      {isLoading && <div className="text-muted text-[13px]">Loading…</div>}
+      {isError && <div className="text-danger text-[13px]">Couldn&apos;t load downloads.</div>}
+      {data?.length === 0 && <div className="text-muted text-[13px]">No downloads yet.</div>}
       {data?.map(job => <DownloadRow key={job.id} job={job} />)}
-    </div>
+    </GlassCard>
   );
 };

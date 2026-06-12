@@ -1,101 +1,179 @@
 @import 'tailwindcss';
 
-/* ── Paper design tokens ─────────────────────────── */
+/* ── Aurora design tokens ────────────────────────── */
 :root {
-  --paper-bg:           #f5f0e8;
-  --paper-bg-texture:   repeating-linear-gradient(
-                          0deg,
-                          transparent,
-                          transparent 31px,
-                          rgba(0, 0, 0, 0.04) 31px,
-                          rgba(0, 0, 0, 0.04) 32px
-                        );
-  --paper-surface:      #faf7f2;
-  --paper-surface-hi:   #ffffff;
-  --paper-border:       rgba(0, 0, 0, 0.10);
-  --paper-border-bold:  rgba(0, 0, 0, 0.20);
-  --paper-text:         #1a1208;
-  --paper-muted:        #6b5e45;
-  --paper-dim:          #c8b898;
-  --paper-accent:       #c0392b;
-  --paper-safe:         #16a34a;
-  --paper-warn:         #d97706;
-  --paper-danger:       #c0392b;
-
-  --font-display: 'Bebas Neue', sans-serif;
-  --font-ui:      'DM Sans', sans-serif;
-  --font-data:    'DM Mono', monospace;
+  --bg:           #f4f7fc;
+  --aurora-1:     #c7e8ff;
+  --aurora-2:     #e8d5ff;
+  --aurora-3:     #c5f5e8;
+  --surface:      rgba(255, 255, 255, 0.62);
+  --surface-hi:   rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(26, 36, 64, 0.08);
+  --glass-shadow: 0 8px 32px rgba(90, 110, 160, 0.12);
+  --ink:          #1a2440;
+  --muted:        #5a6a92;
+  --dim:          #8593b8;
+  --accent:       #0d9488;
+  --accent-2:     #6366f1;
+  --safe:         #0d9488;
+  --warn:         #d97706;
+  --danger:       #dc2626;
+  --track:        rgba(26, 36, 64, 0.08);
 
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+html[data-mode='dark'] {
+  --bg:           #0a0e1a;
+  --aurora-1:     #1e3a5f;
+  --aurora-2:     #2d1b4e;
+  --aurora-3:     #0f3d3e;
+  --surface:      rgba(255, 255, 255, 0.06);
+  --surface-hi:   rgba(255, 255, 255, 0.1);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  --ink:          #f0f4ff;
+  --muted:        #94a3c8;
+  --dim:          #66749f;
+  --accent:       #5eead4;
+  --accent-2:     #818cf8;
+  --safe:         #34d399;
+  --warn:         #fbbf24;
+  --danger:       #f87171;
+  --track:        rgba(0, 0, 0, 0.35);
+}
+
+/* Expose tokens as Tailwind utilities: bg-surface, text-ink, border-glass, … */
+@theme inline {
+  --color-surface:    var(--surface);
+  --color-surface-hi: var(--surface-hi);
+  --color-glass:      var(--glass-border);
+  --color-ink:        var(--ink);
+  --color-muted:      var(--muted);
+  --color-dim:        var(--dim);
+  --color-accent:     var(--accent);
+  --color-accent-2:   var(--accent-2);
+  --color-safe:       var(--safe);
+  --color-warn:       var(--warn);
+  --color-danger:     var(--danger);
+  --font-ui:          'Iosevka Aile', sans-serif;
+  --font-data:        'Iosevka', monospace;
 }
 
 /* ── Global base ─────────────────────────────────── */
 body {
   margin: 0;
   font-family: var(--font-ui);
-  background-color: var(--paper-bg);
-  background-image: var(--paper-bg-texture);
-  color: var(--paper-text);
+  background: var(--bg);
+  color: var(--ink);
 }
 
-/* ── Live indicator dot (used in LayoutMain) ─────── */
+/* ── Aurora background layer ─────────────────────── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: -20%;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 60% 50% at 20% 10%, var(--aurora-1), transparent 65%),
+    radial-gradient(ellipse 55% 45% at 80% 30%, var(--aurora-2), transparent 65%),
+    radial-gradient(ellipse 65% 55% at 50% 95%, var(--aurora-3), transparent 65%);
+  animation: aurora-drift 60s ease-in-out infinite alternate;
+}
+
+@keyframes aurora-drift {
+  from { transform: translate3d(-2%, -1%, 0) scale(1); }
+  to   { transform: translate3d(2%, 2%, 0) scale(1.08); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body::before,
+  .live-dot,
+  .skeleton,
+  .row-enter,
+  .spinner {
+    animation: none;
+  }
+}
+
+/* ── Glass surface (defined once, used by GlassCard) ── */
+.glass-card {
+  background: var(--surface);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  box-shadow: var(--glass-shadow);
+}
+
+/* ── Live indicator dot ──────────────────────────── */
 .live-dot {
   display: inline-block;
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--paper-safe);
-  animation: paper-pulse 2.5s infinite;
+  background: var(--safe);
+  animation: pulse 2.5s infinite;
 }
 
-@keyframes paper-pulse {
+@keyframes pulse {
   0%, 100% { opacity: 1; }
-  50%       { opacity: 0.3; }
+  50%      { opacity: 0.3; }
 }
 
-/* ── File row entrance animation ─────────────────── */
-@keyframes paper-slide-in {
+/* ── Row entrance animation ──────────────────────── */
+@keyframes slide-in {
   from { opacity: 0; transform: translateX(-8px); }
   to   { opacity: 1; transform: translateX(0); }
+}
+
+.row-enter {
+  animation: slide-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
 
+.spinner {
+  animation: spin 0.6s linear infinite;
+}
+
 /* ── Skeleton shimmer ────────────────────────────── */
-@keyframes paper-shimmer {
+@keyframes shimmer {
   from { background-position: 200% 0; }
   to   { background-position: -200% 0; }
 }
 
-/* ── File row menu button: always visible on touch ── */
+.skeleton {
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    var(--surface-hi) 25%,
+    var(--glass-border) 50%,
+    var(--surface-hi) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* ── Row menu button: always visible on touch ────── */
 @media (hover: none) {
-  .paper-row-menu-btn {
+  .row-menu-btn {
     opacity: 1 !important;
   }
 }
 
 /* ── Breadcrumb ancestor links ───────────────────── */
-.paper-breadcrumb-link {
+.breadcrumb-link {
   text-decoration: none;
-  color: var(--paper-accent);
+  color: var(--accent);
   font-family: var(--font-data);
   font-size: 12px;
   cursor: pointer;
 }
-.paper-breadcrumb-link:hover {
+.breadcrumb-link:hover {
   text-decoration: underline;
-}
-
-.paper-skeleton {
-  background: linear-gradient(
-    90deg,
-    var(--paper-surface) 25%,
-    rgba(0, 0, 0, 0.06) 50%,
-    var(--paper-surface) 75%
-  );
-  background-size: 200% 100%;
-  animation: paper-shimmer 1.5s infinite;
 }

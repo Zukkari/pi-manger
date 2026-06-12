@@ -1,55 +1,26 @@
 import { Outlet } from '@tanstack/react-router';
 
+import { ThemeToggle } from '@/shared/theme/ThemeToggle';
 import { NavBar } from '@/shared/ui/NavBar';
 
 export const LayoutMain = () => (
-  <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-    <header style={{
-      position: 'sticky',
-      top: 0,
-      zIndex: 10,
-      backgroundColor: 'var(--paper-bg)',
-      backgroundImage: 'var(--paper-bg-texture)',
-      borderBottom: '3px solid var(--paper-text)',
-    }}>
-      <div style={{
-        maxWidth: '440px',
-        margin: '0 auto',
-        padding: '16px 20px 14px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-      }}>
-        <span style={{
-          fontFamily: 'var(--font-display)',
-          fontSize: '22px',
-          letterSpacing: '0.08em',
-          textTransform: 'uppercase',
-          color: 'var(--paper-text)',
-        }}>
+  <div className="min-h-screen flex flex-col">
+    <header className="sticky top-0 z-10 bg-surface backdrop-blur-xl border-b border-glass">
+      <div className="max-w-md mx-auto px-5 pt-4 pb-3 flex items-center justify-between">
+        <span className="font-ui text-lg font-semibold tracking-wide text-ink">
           Pi Manager
         </span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-          <span className="live-dot" aria-hidden="true" />
-          <span style={{
-            fontFamily: 'var(--font-data)',
-            fontSize: '10px',
-            color: 'var(--paper-muted)',
-            letterSpacing: '0.05em',
-          }}>
-            LIVE
+        <div className="flex items-center gap-3">
+          <span className="flex items-center gap-1.5">
+            <span className="live-dot" aria-hidden="true" />
+            <span className="font-data text-[10px] tracking-widest text-muted">LIVE</span>
           </span>
+          <ThemeToggle />
         </div>
       </div>
     </header>
     <NavBar />
-    <main style={{
-      flex: 1,
-      maxWidth: '440px',
-      margin: '0 auto',
-      width: '100%',
-      padding: '24px 20px 40px',
-    }}>
+    <main className="flex-1 max-w-md mx-auto w-full px-5 pt-6 pb-10">
       <Outlet />
     </main>
   </div>
