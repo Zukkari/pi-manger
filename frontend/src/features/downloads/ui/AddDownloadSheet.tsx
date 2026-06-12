@@ -1,3 +1,4 @@
+import { X } from 'lucide-react';
 import { useState } from 'react';
 
 import { useCreateDownload } from '../queries/useCreateDownload';
@@ -8,43 +9,11 @@ interface AddDownloadSheetProps {
   onClose: () => void;
 }
 
-const OVERLAY_STYLE: React.CSSProperties = {
-  position: 'fixed',
-  inset: 0,
-  zIndex: 50,
-  background: 'var(--paper-bg)',
-  backgroundImage: 'var(--paper-bg-texture)',
-  display: 'flex',
-  flexDirection: 'column',
-};
+const FIELD_CLASS =
+  'w-full box-border px-3 py-2.5 rounded-xl border border-glass bg-surface-hi font-ui text-sm text-ink mb-3.5 outline-none focus:border-accent transition-colors';
 
-const PANEL_STYLE: React.CSSProperties = {
-  maxWidth: '440px',
-  width: '100%',
-  margin: '0 auto',
-  padding: '20px',
-  boxSizing: 'border-box',
-};
-
-const FIELD_STYLE: React.CSSProperties = {
-  width: '100%',
-  boxSizing: 'border-box',
-  padding: '10px 11px',
-  border: '1px solid var(--paper-border)',
-  borderRadius: '8px',
-  marginBottom: '13px',
-  fontFamily: 'var(--font-ui)',
-  fontSize: '14px',
-};
-
-const LABEL_STYLE: React.CSSProperties = {
-  fontFamily: 'var(--font-data)',
-  fontSize: '10px',
-  letterSpacing: '0.08em',
-  textTransform: 'uppercase',
-  color: 'var(--paper-muted)',
-  margin: '0 0 5px',
-};
+const LABEL_CLASS =
+  'font-data text-[10px] uppercase tracking-widest text-muted m-0 mb-1.5';
 
 export const AddDownloadSheet = ({ onClose }: AddDownloadSheetProps) => {
   const [url, setUrl] = useState('');
@@ -64,8 +33,8 @@ export const AddDownloadSheet = ({ onClose }: AddDownloadSheetProps) => {
 
   if (picking) {
     return (
-      <div style={OVERLAY_STYLE}>
-        <div style={PANEL_STYLE}>
+      <div className="fixed inset-0 z-50 flex flex-col" style={{ background: 'var(--bg)' }}>
+        <div className="max-w-md w-full mx-auto p-5 box-border">
           <FolderPicker
             onSelect={selected => {
               setDir(selected);
@@ -79,45 +48,38 @@ export const AddDownloadSheet = ({ onClose }: AddDownloadSheetProps) => {
   }
 
   return (
-    <div style={OVERLAY_STYLE}>
-      <header
-        style={{
-          borderBottom: '3px solid var(--paper-text)',
-          padding: '12px 20px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          fontFamily: 'var(--font-display)',
-          letterSpacing: '0.08em',
-          textTransform: 'uppercase',
-          fontSize: '20px',
-        }}
-      >
+    <div className="fixed inset-0 z-50 flex flex-col" style={{ background: 'var(--bg)' }}>
+      <header className="border-b border-glass px-5 py-3 flex justify-between items-center font-ui text-lg font-semibold text-ink">
         <span>Add Download</span>
-        <button type="button" onClick={onClose} aria-label="Close" style={{ background: 'none', border: 'none', fontSize: '22px', cursor: 'pointer', color: 'var(--paper-muted)' }}>
-          ✕
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close"
+          className="bg-transparent border-none cursor-pointer text-muted hover:text-ink transition-colors"
+        >
+          <X size={20} aria-hidden />
         </button>
       </header>
 
-      <div style={PANEL_STYLE}>
-        <p style={LABEL_STYLE}>Link</p>
-        <input style={FIELD_STYLE} placeholder="Paste link (https://…)" value={url} onChange={e => setUrl(e.target.value)} />
+      <div className="max-w-md w-full mx-auto p-5 box-border">
+        <p className={LABEL_CLASS}>Link</p>
+        <input className={FIELD_CLASS} placeholder="Paste link (https://…)" value={url} onChange={e => setUrl(e.target.value)} />
 
-        <p style={LABEL_STYLE}>Destination folder</p>
+        <p className={LABEL_CLASS}>Destination folder</p>
         <button
           type="button"
           onClick={() => setPicking(true)}
-          style={{ ...FIELD_STYLE, display: 'flex', justifyContent: 'space-between', cursor: 'pointer', textAlign: 'left' }}
+          className={`${FIELD_CLASS} flex justify-between cursor-pointer text-left`}
         >
-          <span style={{ fontFamily: 'var(--font-data)', fontSize: '13px' }}>/{dir}</span>
-          <span style={{ fontFamily: 'var(--font-data)', fontSize: '11px', color: 'var(--paper-accent)' }}>CHANGE ▸</span>
+          <span className="font-data text-[13px]">/{dir}</span>
+          <span className="font-data text-[11px] text-accent">CHANGE ▸</span>
         </button>
 
-        <p style={LABEL_STYLE}>File name — optional</p>
-        <input style={FIELD_STYLE} placeholder="Leave blank to use the link's name" value={name} onChange={e => setName(e.target.value)} />
+        <p className={LABEL_CLASS}>File name — optional</p>
+        <input className={FIELD_CLASS} placeholder="Leave blank to use the link's name" value={name} onChange={e => setName(e.target.value)} />
 
         {isError && (
-          <p style={{ color: 'var(--paper-danger)', fontSize: '13px', margin: '0 0 12px' }}>
+          <p className="text-danger text-[13px] m-0 mb-3">
             {error instanceof Error ? error.message : 'Something went wrong.'}
           </p>
         )}
@@ -126,20 +88,8 @@ export const AddDownloadSheet = ({ onClose }: AddDownloadSheetProps) => {
           type="button"
           onClick={handleSubmit}
           disabled={!canSubmit}
-          style={{
-            width: '100%',
-            padding: '12px',
-            border: 'none',
-            borderRadius: '8px',
-            background: 'var(--paper-accent)',
-            color: '#fff',
-            fontFamily: 'var(--font-display)',
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
-            fontSize: '16px',
-            cursor: 'pointer',
-            opacity: canSubmit ? 1 : 0.5,
-          }}
+          className="w-full py-3 rounded-full border-none font-ui text-base font-semibold text-white cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity"
+          style={{ background: 'linear-gradient(135deg, var(--accent), var(--accent-2))' }}
         >
           {isPending ? 'Starting…' : 'Start Download'}
         </button>
