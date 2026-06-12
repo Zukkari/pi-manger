@@ -7,31 +7,31 @@ import (
 )
 
 func TestLastPathSegment(t *testing.T) {
-	cases := map[string]string{
-		"/files/ubuntu.iso": "ubuntu.iso",
-		"/files/sub/":       "sub",
-		"/":                 "",
-		"":                  "",
-		"/a/b/c.tar.gz":     "c.tar.gz",
+	cases := []struct{ in, want string }{
+		{"/files/ubuntu.iso", "ubuntu.iso"},
+		{"/files/sub/", "sub"},
+		{"/", ""},
+		{"", ""},
+		{"/a/b/c.tar.gz", "c.tar.gz"},
 	}
-	for in, want := range cases {
-		if got := lastPathSegment(in); got != want {
-			t.Errorf("lastPathSegment(%q) = %q, want %q", in, got, want)
+	for _, c := range cases {
+		if got := lastPathSegment(c.in); got != c.want {
+			t.Errorf("lastPathSegment(%q) = %q, want %q", c.in, got, c.want)
 		}
 	}
 }
 
 func TestFilenameFromContentDisposition(t *testing.T) {
-	cases := map[string]string{
-		`attachment; filename="report.pdf"`: "report.pdf",
-		`attachment; filename=plain.txt`:    "plain.txt",
-		`inline`:                            "",
-		``:                                  "",
-		`attachment; filename="../etc/x"`:   "x",
+	cases := []struct{ in, want string }{
+		{`attachment; filename="report.pdf"`, "report.pdf"},
+		{`attachment; filename=plain.txt`, "plain.txt"},
+		{`inline`, ""},
+		{``, ""},
+		{`attachment; filename="../etc/x"`, "x"},
 	}
-	for in, want := range cases {
-		if got := filenameFromContentDisposition(in); got != want {
-			t.Errorf("filenameFromContentDisposition(%q) = %q, want %q", in, got, want)
+	for _, c := range cases {
+		if got := filenameFromContentDisposition(c.in); got != c.want {
+			t.Errorf("filenameFromContentDisposition(%q) = %q, want %q", c.in, got, c.want)
 		}
 	}
 }
@@ -53,5 +53,15 @@ func TestUniqueNameSuffixesCollisions(t *testing.T) {
 	}
 	if got := uniqueName(dir, "file.iso"); got != "file (2).iso" {
 		t.Fatalf("collision vs .part: got %q, want file (2).iso", got)
+	}
+}
+
+func TestUniqueNameWithoutExtension(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "Dockerfile"), []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if got := uniqueName(dir, "Dockerfile"); got != "Dockerfile (1)" {
+		t.Fatalf("extensionless collision: got %q, want Dockerfile (1)", got)
 	}
 }

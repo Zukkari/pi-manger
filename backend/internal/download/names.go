@@ -16,7 +16,7 @@ func lastPathSegment(p string) string {
 		return ""
 	}
 	seg := path.Base(p)
-	if seg == "/" || seg == "." {
+	if seg == "." {
 		return ""
 	}
 	return seg
