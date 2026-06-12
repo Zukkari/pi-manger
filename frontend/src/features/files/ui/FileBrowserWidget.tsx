@@ -10,7 +10,7 @@ import { DEFAULT_SORT, sortEntries } from '../lib/sortEntries';
 import type { SortState } from '../lib/sortEntries';
 import { useBulkDeleteFiles } from '../queries/useBulkDeleteFiles';
 import { useDeleteFile } from '../queries/useDeleteFile';
-import { useFileSearch } from '../queries/useFileSearch';
+import { MIN_QUERY_LENGTH, useFileSearch } from '../queries/useFileSearch';
 import { useFiles } from '../queries/useFiles';
 import { DeleteConfirmDialog } from './DeleteConfirmDialog';
 import { FileRow } from './FileRow';
@@ -63,7 +63,7 @@ export const FileBrowserWidget = () => {
   const { mutate: deleteFile, isPending: isDeleting } = useDeleteFile(parent_id);
   const bulkDelete = useBulkDeleteFiles(parent_id);
   const search = useFileSearch(debouncedQuery);
-  const isSearching = debouncedQuery.trim().length >= 2;
+  const isSearching = debouncedQuery.trim().length >= MIN_QUERY_LENGTH;
 
   useEffect(() => {
     if (parent_id !== undefined) return;
