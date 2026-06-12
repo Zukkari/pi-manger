@@ -48,6 +48,12 @@ All theme values are CSS custom properties in `frontend/src/index.css`, replacin
 
 Light values live on `:root`; dark overrides under `html[data-mode="dark"]`.
 
+Tailwind stays. Tokens are exposed through Tailwind 4's `@theme` directive so
+components use semantic utilities (`bg-surface`, `text-muted`, …) that flip with
+`data-mode`, rather than sprinkling `var(...)` arbitrary values. Identity styling
+(aurora background, glass surface, animations) remains hand-written CSS; Tailwind
+handles layout, spacing, and breakpoints.
+
 ### Mode resolution
 
 `shared/theme/ThemeProvider` owns the preference `'system' | 'light' | 'dark'`:
