@@ -85,7 +85,13 @@ func Sync(ctx context.Context, root string, s Store) error {
 			prev, existed := snapshot[path]
 			switch {
 			case !existed:
-				changes = append(changes, store.Change{Path: path, ChangeType: "added", BytesDelta: info.Size(), DetectedAt: now})
+				delta := info.Size()
+				if d.IsDir() {
+					// Directory sizes reflect filesystem block allocation, not content —
+					// zero them out to avoid misleading byte-delta values in the feed.
+					delta = 0
+				}
+				changes = append(changes, store.Change{Path: path, ChangeType: "added", BytesDelta: delta, DetectedAt: now})
 			case !d.IsDir() && info.Size() > prev.Size:
 				changes = append(changes, store.Change{Path: path, ChangeType: "grown", BytesDelta: info.Size() - prev.Size, DetectedAt: now})
 			case !d.IsDir() && info.Size() < prev.Size:

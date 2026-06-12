@@ -226,7 +226,11 @@ func TestSync_RecordsAddedRemovedAndGrownChanges(t *testing.T) {
 		t.Fatalf("bootstrap must produce 0 changes, got %d", len(changes))
 	}
 
-	// (b) add fileB (3 bytes) and grow fileA to "aaaa" (4 bytes, delta +2).
+	// (b) add fileB (3 bytes), a new subdirectory, and grow fileA to "aaaa" (4 bytes, delta +2).
+	subdir := filepath.Join(root, "newsubdir")
+	if err := os.Mkdir(subdir, 0755); err != nil {
+		t.Fatal(err)
+	}
 	if err := os.WriteFile(fileB, []byte("bbb"), 0644); err != nil {
 		t.Fatal(err)
 	}
@@ -242,9 +246,9 @@ func TestSync_RecordsAddedRemovedAndGrownChanges(t *testing.T) {
 		t.Fatalf("ListChanges after second sync: %v", err)
 	}
 
-	// Expect exactly: one added row for fileB (+3), one grown row for fileA (+2).
-	// Directories must not produce grown/shrunk rows.
-	var addedB, grownA bool
+	// Expect exactly: one added row for fileB (+3), one added row for newsubdir (0),
+	// and one grown row for fileA (+2). Directory added rows must carry BytesDelta == 0.
+	var addedB, grownA, addedSubdir bool
 	for _, c := range changes {
 		if c.Path == fileB && c.ChangeType == "added" {
 			if c.BytesDelta != 3 {
@@ -258,6 +262,13 @@ func TestSync_RecordsAddedRemovedAndGrownChanges(t *testing.T) {
 			}
 			grownA = true
 		}
+		if c.Path == subdir && c.ChangeType == "added" {
+			// Directory sizes are filesystem block-allocation noise; delta must be zeroed.
+			if c.BytesDelta != 0 {
+				t.Errorf("added directory: expected BytesDelta 0, got %d", c.BytesDelta)
+			}
+			addedSubdir = true
+		}
 		// Directories must never produce grown/shrunk rows.
 		if c.Path == root && (c.ChangeType == "grown" || c.ChangeType == "shrunk") {
 			t.Errorf("unexpected grown/shrunk row for directory %q", c.Path)
@@ -269,9 +280,12 @@ func TestSync_RecordsAddedRemovedAndGrownChanges(t *testing.T) {
 	if !grownA {
 		t.Errorf("expected a grown row for fileA, changes: %+v", changes)
 	}
+	if !addedSubdir {
+		t.Errorf("expected an added row for newsubdir with BytesDelta=0, changes: %+v", changes)
+	}
 	// No extra change types (root dir must not appear as grown/shrunk).
 	for _, c := range changes {
-		if c.Path != fileA && c.Path != fileB {
+		if c.Path != fileA && c.Path != fileB && c.Path != subdir {
 			t.Errorf("unexpected change row for path %q (type %q)", c.Path, c.ChangeType)
 		}
 	}
