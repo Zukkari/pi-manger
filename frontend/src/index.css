@@ -12,7 +12,7 @@
   --glass-shadow: 0 8px 32px rgba(90, 110, 160, 0.12);
   --ink:          #1a2440;
   --muted:        #5a6a92;
-  --dim:          #9aa7c7;
+  --dim:          #8593b8;
   --accent:       #0d9488;
   --accent-2:     #6366f1;
   --safe:         #0d9488;
@@ -35,7 +35,7 @@ html[data-mode='dark'] {
   --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
   --ink:          #f0f4ff;
   --muted:        #94a3c8;
-  --dim:          #55628a;
+  --dim:          #66749f;
   --accent:       #5eead4;
   --accent-2:     #818cf8;
   --safe:         #34d399;
@@ -89,7 +89,13 @@ body::before {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  body::before { animation: none; }
+  body::before,
+  .live-dot,
+  .skeleton,
+  .row-enter,
+  .spinner {
+    animation: none;
+  }
 }
 
 /* ── Glass surface (defined once, used by GlassCard) ── */
@@ -129,6 +135,10 @@ body::before {
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+.spinner {
+  animation: spin 0.6s linear infinite;
 }
 
 /* ── Skeleton shimmer ────────────────────────────── */
