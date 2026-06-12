@@ -79,7 +79,7 @@ func main() {
 
 	mux := http.NewServeMux()
 	mux.Handle("/api/disk", handler.NewDiskHandler(managedDir))
-	mux.Handle("/api/files/top", handler.NewTopFilesHandler(db))
+	mux.Handle("/api/directories/", handler.NewDirectoryUsageHandler(db))
 	mux.Handle("/api/files", handler.NewFilesHandler(db))
 	mux.Handle("/api/files/", handler.NewDeleteFileHandler(db))
 	mux.Handle("/api/downloads", handler.NewDownloadsHandler(downloads))

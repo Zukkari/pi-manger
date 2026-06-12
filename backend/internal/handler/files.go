@@ -135,9 +135,5 @@ func parseSearchParams(q url.Values) (store.SearchFilesParams, error) {
 
 // writeBadRequest sends a 400 with a JSON error body.
 func writeBadRequest(w http.ResponseWriter, msg string) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusBadRequest)
-	if err := json.NewEncoder(w).Encode(errorResponse{Error: msg}); err != nil {
-		log.Printf("files: encode 400: %v", err)
-	}
+	writeJSONError(w, http.StatusBadRequest, msg)
 }
