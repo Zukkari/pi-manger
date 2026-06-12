@@ -62,10 +62,36 @@ func TestManagerOverrideName(t *testing.T) {
 	defer srv.Close()
 	root := t.TempDir()
 	m := NewManager(root, srv.Client())
-	job, _ := m.Start(srv.URL+"/x.bin", "", "custom.txt")
+	job, err := m.Start(srv.URL+"/x.bin", "", "custom.txt")
+	if err != nil {
+		t.Fatalf("Start: %v", err)
+	}
 	done := waitFor(t, m, job.ID, StatusCompleted)
 	if done.Name != "custom.txt" {
 		t.Errorf("name = %q, want custom.txt", done.Name)
+	}
+}
+
+func TestManagerSuffixesNameOnCollision(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("data"))
+	}))
+	defer srv.Close()
+	root := t.TempDir()
+	if err := os.WriteFile(filepath.Join(root, "file.bin"), []byte("existing"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	m := NewManager(root, srv.Client())
+	job, err := m.Start(srv.URL+"/file.bin", "", "")
+	if err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+	done := waitFor(t, m, job.ID, StatusCompleted)
+	if done.Name != "file (1).bin" {
+		t.Errorf("final job name = %q, want file (1).bin", done.Name)
+	}
+	if _, err := os.Stat(filepath.Join(root, "file (1).bin")); err != nil {
+		t.Errorf("suffixed file should exist: %v", err)
 	}
 }
 
@@ -113,8 +139,14 @@ func TestListNewestFirst(t *testing.T) {
 	}))
 	defer srv.Close()
 	m := NewManager(t.TempDir(), srv.Client())
-	j1, _ := m.Start(srv.URL+"/1", "", "")
-	j2, _ := m.Start(srv.URL+"/2", "", "")
+	j1, err := m.Start(srv.URL+"/1", "", "")
+	if err != nil {
+		t.Fatalf("Start j1: %v", err)
+	}
+	j2, err := m.Start(srv.URL+"/2", "", "")
+	if err != nil {
+		t.Fatalf("Start j2: %v", err)
+	}
 	list := m.List()
 	if len(list) < 2 || list[0].ID != j2.ID || list[1].ID != j1.ID {
 		t.Errorf("expected newest-first ordering: got %+v", list)

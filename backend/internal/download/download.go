@@ -156,6 +156,10 @@ func (m *Manager) run(id string, u *url.URL, dir, override string) {
 		return
 	}
 
+	// Name resolution, highest priority first: explicit override, then the URL
+	// path segment, then the server's Content-Disposition, then a hard fallback.
+	// The URL segment is preferred over Content-Disposition because it is what
+	// the user pasted; Content-Disposition only fills in when the URL is opaque.
 	name := override
 	if name == "" {
 		name = lastPathSegment(u.Path)
@@ -208,6 +212,9 @@ type progressWriter struct {
 	id string
 }
 
+// Write records progress only; it never fails. It is the second writer in an
+// io.MultiWriter(file, pw), so it is reached only after the bytes were already
+// written to the file — the file's write error is what MultiWriter propagates.
 func (w *progressWriter) Write(p []byte) (int, error) {
 	n := len(p)
 	w.m.update(w.id, func(j *Job) { j.BytesDownloaded += int64(n) })
