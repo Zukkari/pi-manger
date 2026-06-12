@@ -37,6 +37,7 @@ const renderProbe = () =>
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
   localStorage.clear();
   delete document.documentElement.dataset.mode;
 });
@@ -86,5 +87,30 @@ describe('ThemeProvider', () => {
 
     expect(screen.getByRole('button')).toHaveTextContent('system:light');
     expect(document.documentElement.dataset.mode).toBe('light');
+  });
+
+  it('ignores OS scheme changes while preference is explicit', async () => {
+    const media = stubMatchMedia(true);
+    const user = userEvent.setup();
+    renderProbe();
+
+    await user.click(screen.getByRole('button'));
+    expect(screen.getByRole('button')).toHaveTextContent('light:light');
+
+    act(() => media.fireChange(false));
+    act(() => media.fireChange(true));
+
+    expect(screen.getByRole('button')).toHaveTextContent('light:light');
+    expect(document.documentElement.dataset.mode).toBe('light');
+  });
+
+  it('falls back to system when localStorage is unavailable', () => {
+    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new Error('blocked');
+    });
+    stubMatchMedia(false);
+    renderProbe();
+
+    expect(screen.getByRole('button')).toHaveTextContent('system:light');
   });
 });

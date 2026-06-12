@@ -51,19 +51,17 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   }, [resolvedMode]);
 
   const cyclePreference = () => {
-    setPreference(prev => {
-      const next = NEXT_PREFERENCE[prev];
-      try {
-        if (next === 'system') {
-          localStorage.removeItem(STORAGE_KEY);
-        } else {
-          localStorage.setItem(STORAGE_KEY, next);
-        }
-      } catch {
-        // localStorage unavailable: keep the preference in memory only
+    const next = NEXT_PREFERENCE[preference];
+    try {
+      if (next === 'system') {
+        localStorage.removeItem(STORAGE_KEY);
+      } else {
+        localStorage.setItem(STORAGE_KEY, next);
       }
-      return next;
-    });
+    } catch {
+      // localStorage unavailable: keep the preference in memory only
+    }
+    setPreference(next);
   };
 
   return (
