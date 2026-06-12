@@ -30,6 +30,8 @@ const DownloadRow = ({ job }: { job: DownloadJob }) => (
   <div style={{ marginBottom: '14px', fontFamily: 'var(--font-ui)', fontSize: '13px' }}>
     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
       <span>{job.name || job.url}</span>
+      {/* Show a percentage only when the server sent a Content-Length; otherwise
+          fall back to the status word (the bar still renders, at 0% width). */}
       <span style={{ color: STATUS_COLOR[job.status], fontFamily: 'var(--font-data)', fontSize: '11px' }}>
         {job.status === 'downloading' && job.total_bytes > 0 ? `${percent(job)}%` : job.status}
       </span>

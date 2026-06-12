@@ -43,9 +43,32 @@ describe('DownloadsList', () => {
     expect(screen.getByText('unexpected status 404')).toBeInTheDocument();
   });
 
-  it('renders nothing notable when there are no downloads', () => {
+  it('shows the empty state when there are no downloads', () => {
     mockUseDownloads.mockReturnValue({ data: [], isLoading: false, isError: false } as unknown as ReturnType<typeof downloadsHook.useDownloads>);
     render(<DownloadsList />);
     expect(screen.getByText(/no downloads yet/i)).toBeInTheDocument();
+  });
+
+  it('shows the completed status for a finished download without a progress bar', () => {
+    mockUseDownloads.mockReturnValue({
+      data: [job({ status: 'completed', bytes_downloaded: 10, total_bytes: 10, finished_at: 2 })],
+      isLoading: false,
+      isError: false,
+    } as unknown as ReturnType<typeof downloadsHook.useDownloads>);
+    render(<DownloadsList />);
+    expect(screen.getByText('completed')).toBeInTheDocument();
+    expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+  });
+
+  it('shows a loading state', () => {
+    mockUseDownloads.mockReturnValue({ data: undefined, isLoading: true, isError: false } as unknown as ReturnType<typeof downloadsHook.useDownloads>);
+    render(<DownloadsList />);
+    expect(screen.getByText(/loading/i)).toBeInTheDocument();
+  });
+
+  it('shows an error state when the query fails', () => {
+    mockUseDownloads.mockReturnValue({ data: undefined, isLoading: false, isError: true } as unknown as ReturnType<typeof downloadsHook.useDownloads>);
+    render(<DownloadsList />);
+    expect(screen.getByText(/couldn.t load downloads/i)).toBeInTheDocument();
   });
 });
