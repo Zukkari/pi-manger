@@ -105,4 +105,9 @@ This is a dashboard-style app. The key rules:
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/api/disk` | Disk usage stats (`total_bytes`, `used_bytes`, `free_bytes`, `used_percent`) |
-| GET | `/api/files` | List files; optional `?parent_id=<id>`, omit for root entries |
+| GET | `/api/files` | List children (`?parent_id=<id>`, omit for root) or search the whole tree (`?q=&extension=&min_size=&limit=`) |
+| DELETE | `/api/files/{id}` | Delete a file or directory (cascades) |
+| GET | `/api/directories/{id\|root}/usage` | Direct children with recursive total sizes (treemap data) |
+| GET | `/api/file-types` | Space by content category with top extensions |
+| GET | `/api/changes` | Recent sync-detected changes (`?limit=`, default 50) |
+| GET/POST | `/api/downloads` | List / start background downloads |

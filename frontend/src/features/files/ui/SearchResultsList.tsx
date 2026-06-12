@@ -1,5 +1,6 @@
 import { FileText, Folder } from 'lucide-react';
 
+import { formatBytes } from '@/shared/lib/formatBytes';
 import { GlassCard } from '@/shared/ui/GlassCard';
 
 import type { FileEntry } from '../files.types';
@@ -11,16 +12,6 @@ interface SearchResultsListProps {
 
 const containingPath = (entry: FileEntry): string =>
   entry.path.slice(0, entry.path.length - entry.name.length - 1) || '/';
-
-const formatResultSize = (bytes: number): string => {
-  const gb = bytes / 1024 ** 3;
-  if (gb >= 1) return `${gb.toFixed(1)} GB`;
-  const mb = bytes / 1024 ** 2;
-  if (mb >= 1) return `${mb.toFixed(0)} MB`;
-  const kb = bytes / 1024;
-  if (kb >= 1) return `${kb.toFixed(0)} KB`;
-  return `${bytes} B`;
-};
 
 export const SearchResultsList = ({ results, onNavigate }: SearchResultsListProps) => {
   if (results.length === 0) {
@@ -65,7 +56,7 @@ export const SearchResultsList = ({ results, onNavigate }: SearchResultsListProp
             </div>
           </div>
           <span className="font-data text-xs font-medium text-muted shrink-0">
-            {entry.is_dir ? '—' : formatResultSize(entry.size)}
+            {entry.is_dir ? '—' : formatBytes(entry.size)}
           </span>
         </button>
       ))}

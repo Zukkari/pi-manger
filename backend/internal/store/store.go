@@ -187,6 +187,122 @@ func escapeLike(s string) string {
 	return r.Replace(s)
 }
 
+// FileNameSize is a minimal projection for file-type aggregation.
+type FileNameSize struct {
+	Name string
+	Size int64
+}
+
+// FileNameSizes returns name and size for every regular file (no directories).
+// Extension/category aggregation happens in Go: SQLite has no last-index-of,
+// making extension extraction in SQL unreadable.
+func (s *Store) FileNameSizes(ctx context.Context) ([]FileNameSize, error) {
+	rows, err := s.db.QueryContext(ctx, `SELECT name, size FROM files WHERE is_dir = 0`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var out []FileNameSize
+	for rows.Next() {
+		var f FileNameSize
+		if err := rows.Scan(&f.Name, &f.Size); err != nil {
+			return nil, err
+		}
+		out = append(out, f)
+	}
+	return out, rows.Err()
+}
+
+// Change is one filesystem mutation observed between two sync cycles.
+// ChangeType is one of: added, removed, grown, shrunk.
+type Change struct {
+	ID         int64
+	Path       string
+	ChangeType string
+	BytesDelta int64
+	DetectedAt int64
+}
+
+// SnapshotEntry is the pre-sync state of one path, used for diff detection.
+type SnapshotEntry struct {
+	Size  int64
+	IsDir bool
+}
+
+// SnapshotFiles returns the current path → {size, is_dir} state of the tree.
+func (s *Store) SnapshotFiles(ctx context.Context) (map[string]SnapshotEntry, error) {
+	rows, err := s.db.QueryContext(ctx, `SELECT path, size, is_dir FROM files`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	snap := make(map[string]SnapshotEntry)
+	for rows.Next() {
+		var path string
+		var size, isDir int64
+		if err := rows.Scan(&path, &size, &isDir); err != nil {
+			return nil, err
+		}
+		snap[path] = SnapshotEntry{Size: size, IsDir: isDir != 0}
+	}
+	return snap, rows.Err()
+}
+
+// RecordChanges inserts a batch of change rows in one transaction.
+func (s *Store) RecordChanges(ctx context.Context, changes []Change) error {
+	if len(changes) == 0 {
+		return nil
+	}
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	stmt, err := tx.PrepareContext(ctx,
+		`INSERT INTO changes (path, change_type, bytes_delta, detected_at) VALUES (?, ?, ?, ?)`)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	for _, c := range changes {
+		if _, err := stmt.ExecContext(ctx, c.Path, c.ChangeType, c.BytesDelta, c.DetectedAt); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
+}
+
+// ListChanges returns the most recent changes, newest first.
+func (s *Store) ListChanges(ctx context.Context, limit int64) ([]Change, error) {
+	rows, err := s.db.QueryContext(ctx,
+		`SELECT id, path, change_type, bytes_delta, detected_at
+FROM changes ORDER BY detected_at DESC, id DESC LIMIT ?`, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var out []Change
+	for rows.Next() {
+		var c Change
+		if err := rows.Scan(&c.ID, &c.Path, &c.ChangeType, &c.BytesDelta, &c.DetectedAt); err != nil {
+			return nil, err
+		}
+		out = append(out, c)
+	}
+	return out, rows.Err()
+}
+
+// PruneChanges deletes change rows detected before the given Unix timestamp.
+func (s *Store) PruneChanges(ctx context.Context, olderThan int64) error {
+	_, err := s.db.ExecContext(ctx, `DELETE FROM changes WHERE detected_at < ?`, olderThan)
+	return err
+}
+
 // SearchFiles returns files matching the given filters anywhere in the tree,
 // excluding the managed-root row itself. Results are ordered directories
 // first, then by name. MinSize > 0 implies files only (directory sizes are
