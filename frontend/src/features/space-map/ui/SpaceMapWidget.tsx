@@ -30,8 +30,55 @@ export const SpaceMapWidget = () => {
   const { data, isLoading, isError, refetch } = useDirectoryUsage(current.id);
   const tokens = useThemeTokens(TOKEN_NAMES);
 
+  const handleCrumb = (index: number) => {
+    setStack(prev => prev.slice(0, index + 1));
+  };
+
+  const header = (
+    <div className="flex items-center justify-between mb-3">
+      <h2 className="font-ui text-sm font-semibold tracking-wide text-ink m-0">Space map</h2>
+      <nav aria-label="Space map path" className="flex items-center gap-1 min-w-0">
+        {stack.map((crumb, i) => {
+          const isLast = i === stack.length - 1;
+          return (
+            <span key={`${crumb.id ?? 'root'}-${i}`} className="flex items-center gap-1 min-w-0">
+              {i > 0 && <span className="font-data text-[10px] text-dim">›</span>}
+              {isLast ? (
+                <span className="font-data text-xs font-medium text-ink overflow-hidden text-ellipsis whitespace-nowrap">
+                  {crumb.name}
+                </span>
+              ) : (
+                <button type="button" onClick={() => handleCrumb(i)} className="breadcrumb-link bg-transparent border-none p-0">
+                  {crumb.name}
+                </button>
+              )}
+            </span>
+          );
+        })}
+      </nav>
+    </div>
+  );
+
   if (isLoading) return <SpaceMapSkeleton />;
+
   if (isError || !data) {
+    // When drilling into a subdirectory the user needs the breadcrumb to escape
+    // back to a working level rather than being stuck retrying the same path.
+    if (stack.length > 1) {
+      return (
+        <GlassCard className="p-6">
+          {header}
+          <p className="font-ui text-sm text-danger m-0">Failed to load space map. Is the API running?</p>
+          <button
+            type="button"
+            onClick={() => refetch()}
+            className="mt-3 px-4 py-1.5 rounded-full border border-glass bg-surface-hi font-ui text-xs font-semibold text-ink hover:text-accent transition-colors cursor-pointer"
+          >
+            Retry
+          </button>
+        </GlassCard>
+      );
+    }
     return <WidgetError message="Failed to load space map. Is the API running?" onRetry={() => refetch()} />;
   }
 
@@ -47,10 +94,6 @@ export const SpaceMapWidget = () => {
   const handleDrill = (child: UsageChild) => {
     if (!child.is_dir) return;
     setStack(prev => [...prev, { id: child.id, name: child.name }]);
-  };
-
-  const handleCrumb = (index: number) => {
-    setStack(prev => prev.slice(0, index + 1));
   };
 
   const treemapData = data.children.map((c, i) => ({
@@ -73,28 +116,7 @@ export const SpaceMapWidget = () => {
 
   return (
     <GlassCard className="p-6">
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="font-ui text-sm font-semibold tracking-wide text-ink m-0">Space map</h2>
-        <nav aria-label="Space map path" className="flex items-center gap-1 min-w-0">
-          {stack.map((crumb, i) => {
-            const isLast = i === stack.length - 1;
-            return (
-              <span key={`${crumb.id ?? 'root'}-${i}`} className="flex items-center gap-1 min-w-0">
-                {i > 0 && <span className="font-data text-[10px] text-dim">›</span>}
-                {isLast ? (
-                  <span className="font-data text-xs font-medium text-ink overflow-hidden text-ellipsis whitespace-nowrap">
-                    {crumb.name}
-                  </span>
-                ) : (
-                  <button type="button" onClick={() => handleCrumb(i)} className="breadcrumb-link bg-transparent border-none p-0">
-                    {crumb.name}
-                  </button>
-                )}
-              </span>
-            );
-          })}
-        </nav>
-      </div>
+      {header}
 
       {data.children.length === 0 ? (
         <div className="font-ui text-[13px] text-muted py-8 text-center">Empty directory.</div>

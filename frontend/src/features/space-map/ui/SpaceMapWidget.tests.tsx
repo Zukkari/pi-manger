@@ -103,8 +103,7 @@ describe('SpaceMapWidget', () => {
       refetch: vi.fn(),
     } as unknown as ReturnType<typeof directoryUsageHook.useDirectoryUsage>);
 
-    const dirButton = legend.querySelector('button:not([disabled])') as HTMLButtonElement;
-    await user.click(dirButton);
+    await user.click(screen.getByRole('button', { name: /media/i }));
 
     // Hook should have been called with the dir id at some point
     const calls = mockUseDirectoryUsage.mock.calls;
@@ -136,15 +135,56 @@ describe('SpaceMapWidget', () => {
       refetch: vi.fn(),
     } as unknown as ReturnType<typeof directoryUsageHook.useDirectoryUsage>);
 
-    const legend = screen.getByTestId('space-map-legend');
-    const dirButton = legend.querySelector('button:not([disabled])') as HTMLButtonElement;
-    await user.click(dirButton);
+    await user.click(screen.getByRole('button', { name: /media/i }));
 
     // Now click the Root breadcrumb to climb back
     const rootCrumb = screen.getByRole('button', { name: /root/i });
     await user.click(rootCrumb);
 
     // Hook should have been called with undefined (root)
+    const calls = mockUseDirectoryUsage.mock.calls;
+    const calledWithRoot = calls.some(([id]) => id === undefined);
+    expect(calledWithRoot).toBe(true);
+  });
+
+  it('recovers from a drilled error via the breadcrumb', async () => {
+    stubMatchMedia();
+    const user = userEvent.setup();
+
+    // Start at root with one drillable directory
+    mockUseDirectoryUsage.mockReturnValue({
+      data: { parent_id: null, parent_path: null, children: [mockDir] },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof directoryUsageHook.useDirectoryUsage>);
+
+    renderWidget();
+
+    // Drill into the directory; the next fetch fails
+    mockUseDirectoryUsage.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof directoryUsageHook.useDirectoryUsage>);
+
+    await user.click(screen.getByRole('button', { name: /media/i }));
+
+    // Breadcrumb root crumb must still be present even in the error state
+    expect(screen.getByRole('navigation', { name: /space map path/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /root/i })).toBeInTheDocument();
+
+    // Clicking Root re-queries with undefined (root level)
+    mockUseDirectoryUsage.mockReturnValue({
+      data: { parent_id: null, parent_path: null, children: [mockDir] },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof directoryUsageHook.useDirectoryUsage>);
+
+    await user.click(screen.getByRole('button', { name: /root/i }));
+
     const calls = mockUseDirectoryUsage.mock.calls;
     const calledWithRoot = calls.some(([id]) => id === undefined);
     expect(calledWithRoot).toBe(true);
