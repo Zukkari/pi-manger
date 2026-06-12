@@ -1,20 +1,10 @@
-import type { CSSProperties } from 'react';
 import { useNavigate, useRouterState } from '@tanstack/react-router';
 
-const tabStyle = (active: boolean): CSSProperties => ({
-  fontFamily: 'var(--font-display)',
-  fontSize: '17px',
-  letterSpacing: '0.06em',
-  textTransform: 'uppercase' as const,
-  padding: '8px 16px 10px',
-  background: 'none',
-  border: 'none',
-  borderBottom: active ? '3px solid var(--paper-accent)' : '3px solid transparent',
-  marginBottom: '-1px',
-  color: active ? 'var(--paper-accent)' : 'var(--paper-muted)',
-  cursor: 'pointer',
-  transition: 'color 0.15s',
-});
+const tabClass = (active: boolean): string =>
+  'font-ui text-sm font-semibold tracking-wide px-4 py-1.5 rounded-full border transition-colors cursor-pointer ' +
+  (active
+    ? 'bg-surface-hi text-accent border-glass'
+    : 'bg-transparent text-muted border-transparent hover:text-ink');
 
 export const NavBar = () => {
   const { location } = useRouterState();
@@ -24,14 +14,14 @@ export const NavBar = () => {
   const isFiles = location.pathname.startsWith('/files');
 
   return (
-    <div style={{ borderBottom: '1px solid var(--paper-border)' }}>
-      <div style={{ maxWidth: '440px', margin: '0 auto', display: 'flex' }}>
+    <div className="border-b border-glass">
+      <div className="max-w-md mx-auto flex gap-2 px-5 py-2">
         <button
           type="button"
           aria-label="Home"
           aria-current={isHome ? 'page' : undefined}
           onClick={() => navigate({ to: '/' })}
-          style={tabStyle(isHome)}
+          className={tabClass(isHome)}
         >
           Home
         </button>
@@ -40,7 +30,7 @@ export const NavBar = () => {
           aria-label="Files"
           aria-current={isFiles ? 'page' : undefined}
           onClick={() => navigate({ to: '/files', search: { parent_id: undefined } })}
-          style={tabStyle(isFiles)}
+          className={tabClass(isFiles)}
         >
           Files
         </button>
