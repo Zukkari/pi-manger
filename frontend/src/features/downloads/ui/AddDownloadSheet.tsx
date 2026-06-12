@@ -53,6 +53,8 @@ export const AddDownloadSheet = ({ onClose }: AddDownloadSheetProps) => {
   const [picking, setPicking] = useState(false);
   const { mutate, isPending, isError, error } = useCreateDownload();
 
+  const canSubmit = url.trim() !== '' && !isPending;
+
   const handleSubmit = () => {
     mutate(
       { url: url.trim(), dir, name: name.trim() || undefined },
@@ -123,7 +125,7 @@ export const AddDownloadSheet = ({ onClose }: AddDownloadSheetProps) => {
         <button
           type="button"
           onClick={handleSubmit}
-          disabled={url.trim() === '' || isPending}
+          disabled={!canSubmit}
           style={{
             width: '100%',
             padding: '12px',
@@ -136,7 +138,7 @@ export const AddDownloadSheet = ({ onClose }: AddDownloadSheetProps) => {
             textTransform: 'uppercase',
             fontSize: '16px',
             cursor: 'pointer',
-            opacity: url.trim() === '' || isPending ? 0.5 : 1,
+            opacity: canSubmit ? 1 : 0.5,
           }}
         >
           {isPending ? 'Starting…' : 'Start Download'}
