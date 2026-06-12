@@ -130,7 +130,11 @@ body::before {
 }
 
 .row-enter {
-  animation: slide-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+  /* Fill mode must stay `backwards` (hide rows during their staggered delay),
+     never `forwards`/`both`: retaining the final keyframe keeps a transform on
+     every row, which makes each row a stacking context — later rows then paint
+     over an earlier row's open dropdown menu and steal its clicks. */
+  animation: slide-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) backwards;
 }
 
 @keyframes spin {
