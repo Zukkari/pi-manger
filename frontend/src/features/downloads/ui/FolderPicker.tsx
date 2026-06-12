@@ -14,7 +14,8 @@ interface FolderPickerProps {
 
 const joinPath = (crumbs: Crumb[], extra?: string): string => {
   const parts = crumbs.map(c => c.name);
-  if (extra) parts.push(extra);
+  const trimmed = extra?.trim();
+  if (trimmed) parts.push(trimmed);
   return parts.join('/');
 };
 
@@ -45,6 +46,7 @@ export const FolderPicker = ({ onSelect, onClose }: FolderPickerProps) => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
         <button
           type="button"
+          aria-label="Go back"
           onClick={() => setCrumbs(prev => prev.slice(0, -1))}
           disabled={crumbs.length === 0}
           style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--paper-muted)' }}
@@ -56,6 +58,7 @@ export const FolderPicker = ({ onSelect, onClose }: FolderPickerProps) => {
         </span>
         <button
           type="button"
+          aria-label="Close"
           onClick={onClose}
           style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--paper-muted)' }}
         >
