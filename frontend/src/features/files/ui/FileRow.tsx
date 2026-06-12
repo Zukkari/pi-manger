@@ -1,17 +1,9 @@
 import { CheckSquare, CornerLeftUp, FileText, Folder, MoreHorizontal, Square, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
-import type { FileEntry } from '../files.types';
+import { formatBytes } from '@/shared/lib/formatBytes';
 
-const formatFileSize = (bytes: number): string => {
-  const gb = bytes / 1024 ** 3;
-  if (gb >= 1) return `${gb.toFixed(1)} GB`;
-  const mb = bytes / 1024 ** 2;
-  if (mb >= 1) return `${mb.toFixed(0)} MB`;
-  const kb = bytes / 1024;
-  if (kb >= 1) return `${kb.toFixed(0)} KB`;
-  return `${bytes} B`;
-};
+import type { FileEntry } from '../files.types';
 
 const formatDate = (unixSec: number): string =>
   new Date(unixSec * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -134,7 +126,7 @@ export const FileRow = ({ isParent, index, ...rest }: FileRowProps) => {
 
       <div className="flex flex-col items-end gap-0.5 shrink-0">
         <span className="font-data text-xs font-medium text-muted">
-          {entry.is_dir ? '—' : formatFileSize(entry.size)}
+          {entry.is_dir ? '—' : formatBytes(entry.size)}
         </span>
         <span className="font-data text-[10px] text-dim">{formatDate(entry.modified_at)}</span>
       </div>
