@@ -33,6 +33,11 @@ func TestResolveDirRejectsTraversal(t *testing.T) {
 	if got, err := resolveDir(root, "/etc"); err != nil || got != filepath.Join(root, "etc") {
 		t.Fatalf("resolveDir(root, \"/etc\") = %q, %v", got, err)
 	}
+	// An empty dir resolves to the managed root (the folder picker sends "" when
+	// the user picks the root as the destination).
+	if got, err := resolveDir(root, ""); err != nil || got != root {
+		t.Fatalf("resolveDir(root, \"\") = %q, %v", got, err)
+	}
 	for _, bad := range []string{"../escape", "downloads/../../escape", "a/../../../b"} {
 		if _, err := resolveDir(root, bad); err == nil {
 			t.Errorf("resolveDir(%q) expected error, got nil", bad)
